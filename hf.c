@@ -6,7 +6,7 @@
 #include <gsl/gsl_eigen.h>
 #include <assert.h>
 
-#define DEBUG_SCF
+//#define DEBUG_SCF
 //#define DEBUG_s_root
 
 void Load();
@@ -15,7 +15,7 @@ void matrix_output(gsl_matrix *m, int n, char *msg);
 void vector_output(gsl_vector *v, int n, char *msg);
 gsl_matrix *Fock(double h[][4], double e2_int[][4][4][4], double density[][4], int n);
 void density(double Density[][4], gsl_matrix* coef, int n);
-void scf(gsl_matrix *f, const gsl_matrix *s_root, int n);
+gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy);
 
 int main(int argc, char** argv)
 {
@@ -54,8 +54,6 @@ void Load()
     fclose(f);
     //matrix_output(coeff, n, "系数矩阵:\n");
 
-    //计算密度矩阵
-    density(Density, coeff, n);
 
     // 读入双电子积分
     f = fopen(file_name, "r");
@@ -70,31 +68,30 @@ void Load()
         }
     }
     fclose(f);
-#undef NDEBUG
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
-            for (k = 0; k < n; k++) {
-                for (l = 0; l < n; l++) {
-                    assert(fabs(e2[i][j][k][l] - e2[i][j][l][k]) < 1.0E-6);
-                    assert(fabs(e2[i][j][k][l] - e2[j][i][k][l]) < 1.0E-6);
-                    assert(fabs(e2[i][j][k][l] - e2[k][l][i][j]) < 1.0E-6);
-                    assert(fabs(e2[i][j][k][l] - e2[j][i][l][k]) < 1.0E-6);
-                }
-            }
-        }
+    i = 0;
+    int itmax = 100;
+
+    double energy, old_energy = 0.0;
+    while (i < itmax) {
+        printf("iter %d\n", i);
+        //计算密度矩阵
+        density(Density, coeff, n);
+        // 计算FOCK矩阵
+        gsl_matrix *F = Fock(HH, e2, Density, n);
+        //matrix_output(F, n, "FOCK矩阵为:\n");
+        gsl_matrix *s = S_i_root(S, n);
+        coeff = scf(F, s, n, &energy);
+        if (fabs(energy - old_energy) < 1.0E-6)
+            break;
+        else
+            old_energy = energy;
+        i++;
     }
-
-
-    // 计算FOCK矩阵
-    gsl_matrix *F = Fock(HH, e2, Density, n);
-    matrix_output(F, n, "FOCK矩阵为:\n");
-    gsl_matrix *s = S_i_root(S, n);
-    scf(F, s, n);
 }
 void density(double Density[][4], gsl_matrix* coef, int n)
 {
     int i, j, k;
-    printf("密度矩阵为:\n");
+    //printf("密度矩阵为:\n");
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             Density[i][j] = 0;
@@ -102,13 +99,13 @@ void density(double Density[][4], gsl_matrix* coef, int n)
                 //Density[i][j] += 2 * coef[i][k] * coef[j][k];
                 Density[i][j] += 2 * gsl_matrix_get(coef, i, k) * gsl_matrix_get(coef, j, k);
             }
-            printf("%20.10lf", Density[i][j]);
+            //printf("%20.10lf", Density[i][j]);
         }
-        printf("\n");
+        //printf("\n");
     }
 }
 
-void scf(gsl_matrix *f, const gsl_matrix *s_root, int n)
+gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
 {
     gsl_matrix *eigVector = gsl_matrix_alloc(n, n);
     gsl_eigen_symmv_workspace *w = gsl_eigen_symmv_alloc(2*n);
@@ -123,23 +120,19 @@ void scf(gsl_matrix *f, const gsl_matrix *s_root, int n)
     //求本征矢量和本征值
     //gsl_eigen_symm(b, dialg_S, w);
     gsl_eigen_symmv(ftt, eigValue, eigVector, w);
-#ifdef DEBUG_SCF
+    *energy = gsl_vector_min(eigValue);
+
     vector_output(eigValue, n, "FOCK本征值为：\n");
+#ifdef DEBUG_SCF
     matrix_output(eigVector, n,  "FOCK本征矢量为:\n");
 #endif
 
     gsl_matrix *c = gsl_matrix_calloc(n, n);
-
-    
-    //gsl_matrix s_root_invers = gsl_matrix_alloc(n, n);
-    //gsl_matrix *inverse = gsl_matrix_alloc(n, n);
-    //gsl_permutation *permutation = gsl_permutation_alloc(n);
-    //gsl_matrix_memcpy(s_root_invers, s_root);
-
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, s_root, eigVector, 1.0, c);
+#ifdef DEBUG_SCF
     matrix_output(c, n,  "新的轨道系数为:\n");
-
-
+#endif
+    return c;
 }
 
 // 计算Fock矩阵
@@ -258,6 +251,6 @@ void vector_output(gsl_vector *v, int n, char *msg)
 
     printf("%s",msg);
     for (i = 0; i < n; i++)
-        printf("%20.11g", gsl_vector_get(v, i));
+        printf("%15.08g", gsl_vector_get(v, i));
     printf("\n");
 }
