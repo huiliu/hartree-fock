@@ -113,13 +113,16 @@ void scf(gsl_matrix *f, const gsl_matrix *s_root, int n)
     gsl_matrix *eigVector = gsl_matrix_alloc(n, n);
     gsl_eigen_symmv_workspace *w = gsl_eigen_symmv_alloc(2*n);
     gsl_vector *eigValue = gsl_vector_alloc(n);
+
+    gsl_matrix *ft = gsl_matrix_calloc(n, n);
+    gsl_matrix *ftt = gsl_matrix_calloc(n, n);
     
-    //gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, s_root, f, 1.0, ft);
-    //gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, ft, s_root, 1.0, ftt);
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, s_root, f, 1.0, ft);
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, ft, s_root, 1.0, ftt);
 
     //求本征矢量和本征值
     //gsl_eigen_symm(b, dialg_S, w);
-    gsl_eigen_symmv(f, eigValue, eigVector, w);
+    gsl_eigen_symmv(ftt, eigValue, eigVector, w);
 #ifdef DEBUG_SCF
     vector_output(eigValue, n, "FOCK本征值为：\n");
     matrix_output(eigVector, n,  "FOCK本征矢量为:\n");
@@ -151,7 +154,7 @@ gsl_matrix *Fock(double h[][4], double e2_int[][4][4][4], double density[][4], i
             tmp = 0;
             for (k = 0; k < n; k++) {
                 for (l = 0; l < n; l++)
-                    tmp += ((2*e2_int[i][j][k][l] - e2_int[i][l][k][j]) / 4 * density[l][k]);
+                    tmp += ((2*e2_int[i][j][k][l] - e2_int[i][l][k][j]) * density[l][k]/2);
             }
             gsl_matrix_set(m, i, j, tmp + h[i][j]);
         }
@@ -230,33 +233,6 @@ gsl_matrix* S_i_root(double *S, int n)
 #ifdef DEBUG_s_root
     matrix_output(d, n, "逆阵的平方根:\n");
 #endif
-
-    /*
-    // 求本征矢量的逆
-    //------------------ 不正确 ----------------------
-    gsl_vector *v = gsl_vector_alloc(n);
-    gsl_vector_set_all(v, 1.0);
-    gsl_blas_dtrsv(CblasUpper, CblasNoTrans, CblasUnit, p, v);
-    matrix_output(p, n, "本征矢量的逆:\n");
-
-    */
-
-    //printf("the inverse of A:\n");
-    //gsl_matrix_fprintf(stdout, p, "%g");
-    /*
-     * ---------------------------------
-     * 不是求本征值
-     *----------------------------------
-     *
-    // 进行相似变换，求出本征值及变换矩阵
-    gsl_linalg_balance_matrix(b, dialg_S);
-    
-    printf("对角化后:\n");
-    gsl_vector_fprintf(stdout, dialg_S, "%g");
-    printf("A :\n");
-    gsl_matrix_fprintf(stdout, b, "%g");
-
-    */
 
     gsl_matrix_free(b);
     gsl_matrix_free(p);
