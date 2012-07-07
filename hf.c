@@ -4,15 +4,13 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_eigen.h>
-#include <assert.h>
+#include "common.h"
 
 //#define DEBUG_SCF
 //#define DEBUG_s_root
 
 void Load();
 gsl_matrix* S_i_root(double *S, int n);
-void matrix_output(gsl_matrix *m, int n, char *msg);
-void vector_output(gsl_vector *v, int n, char *msg);
 gsl_matrix *Fock(double h[][4], double e2_int[][4][4][4], double density[][4], int n);
 void density(double Density[][4], gsl_matrix* coef, int n);
 gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy);
@@ -231,26 +229,4 @@ gsl_matrix* S_i_root(double *S, int n)
     gsl_matrix_free(p);
     //gsl_matrix_free(d);
     return d;
-}
-
-void matrix_output(gsl_matrix *m, int n, char *msg)
-{
-    int i, j;
-
-    printf("%s",msg);
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++)
-            printf("%20.11g", gsl_matrix_get(m, i, j));
-        printf("\n");
-    }
-}
-
-void vector_output(gsl_vector *v, int n, char *msg)
-{
-    int i;
-
-    printf("%s",msg);
-    for (i = 0; i < n; i++)
-        printf("%15.08g", gsl_vector_get(v, i));
-    printf("\n");
 }
