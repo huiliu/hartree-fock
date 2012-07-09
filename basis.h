@@ -1,25 +1,8 @@
-/*
-STO-3G
----------------
-****
-H     0 
-S   3   1.00
-      3.42525091             0.15432897       
-      0.62391373             0.53532814       
-      0.16885540             0.44463454       
-****
-N     0 
-S   3   1.00
-     99.1061690              0.15432897       
-     18.0523120              0.53532814       
-      4.8856602              0.44463454       
-SP   3   1.00
-      3.7804559             -0.09996723             0.15591627       
-      0.8784966              0.39951283             0.60768372       
-      0.2857144              0.70011547             0.39195739       
-****
-*/
+#include <gsl/gsl_vector.h>
 
+
+#ifndef __INTEGRAL__BASIS__
+#define __INTEGRAL__BASIS__
 typedef struct gto {
     // gaussian = A * exp(-a * r^2)
     // A = A * (2a/pi)^(3/4)    仅对1S轨道
@@ -29,8 +12,29 @@ typedef struct gto {
 }GTO;
 
 typedef struct _b {
+    int gauss_count;
     GTO gaussian[3];   // 3 表示一个基函数由3个gaussian函数构成
 }BASIS;
 
+typedef struct atom_INFORMATON_ {
+// 定义一个原子信息, 包括核电荷数，基函数数目，元素符号，坐标，基函数
+    int n;  // Atomic Number
+    int basis_count;    // basis function count
+    char symbol[3];     // Element Symbol
+    gsl_vector *c;      // the coordination of atom
+    BASIS* basis;       // the parameter of basis function
+}ATOM_INFO;
+
+typedef struct FILE_INPUT_ {
+// 存储解析后的整个输入文件
+    int n;          // atom count in current system
+    ATOM_INFO *c;   // element information
+}INPUT_INFO;
+
 void* read_basis(const char * );
 void basis_set_output(const BASIS*, int, char* );
+void atom_output(const ATOM_INFO* atom, int n);
+
+INPUT_INFO* parse_input(const char* file_name);
+int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count);
+#endif
