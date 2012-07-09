@@ -10,7 +10,7 @@
 
 //#define DEBUG_OVERLAP_SINGLE
 //#define DEBUG_DOUBLE_CENTER
-#define DEBUG_OVERLAP_SINGLE
+//#define DEBUG_OVERLAP_SINGLE
 
 int factorial(int n)
 {
@@ -101,7 +101,7 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, const d
     
     for (i = 0; i < 3; i++)
         center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
-#undef DEBUG_GAUSSIAN_PRODUCT
+//#undef DEBUG_GAUSSIAN_PRODUCT
 #ifdef DEBUG_GAUSSIAN_PRODUCT
     printf("----------------------------------------\n");
     vector_output(A, 3, "用于计算中心的第一个坐标:");
@@ -153,7 +153,7 @@ double overlap_single(const GTO *g1, const gsl_vector *A, const GTO *g2, const g
 
     normal1 = normalize_coeff(g1);
     normal2 = normalize_coeff(g2);
-#define DEBUG_OVERLAP_SINGLE
+//#define DEBUG_OVERLAP_SINGLE
 #ifdef DEBUG_OVERLAP_SINGLE
     /*printf("K= %8.6lf Ix=%9.6lf Iy=%9.6lf Iy=%9.6lf ", K, Ix, Iy, Iz);
     //printf("N1=%10.6lf N2=%10.6lf Coef1=%10.6lf Coef2=%10.6lf", \

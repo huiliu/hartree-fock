@@ -7,9 +7,9 @@ void matrix_output(const gsl_matrix *m, int n, char *msg)
 {
     int i, j;
 
-    printf("%s",msg);
+    printf("%s\n",msg);
     for (i = 0; i < n; i++) {
-        for (j = 0; j <= i; j++)
+        for (j = 0; j < n; j++)
             printf("%12.6g", gsl_matrix_get(m, i, j));
         printf("\n");
     }
@@ -19,7 +19,7 @@ void vector_output(const gsl_vector *v, int n, char *msg)
 {
     int i;
 
-    printf("%s",msg);
+    printf("%s\n",msg);
     for (i = 0; i < n; i++)
         printf("%9.06g", gsl_vector_get(v, i));
     printf("\n");

@@ -3,6 +3,9 @@
 #include <gsl/gsl_blas.h>
 #include "basis.h"
 
+#ifndef __INTEGRAL__OVERLAP__
+#define __INTEGRAL__OVERLAP__
+
 int factorial(int);
 int factorial_2(int);
 double fact_l_lambda(int , int );
@@ -12,3 +15,4 @@ double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B);
 gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, const double b, const gsl_vector *B);
 double normalize_coeff(const GTO *g);
 double overlap_single(const GTO *g1, const gsl_vector *A, const GTO *g2, const gsl_vector *B);
+#endif
