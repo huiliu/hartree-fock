@@ -9,7 +9,7 @@
 //#define DEBUG_SCF
 //#define DEBUG_s_root
 
-void Load();
+void HartreeFock();
 gsl_matrix* S_i_root(double *S, int n);
 gsl_matrix *Fock(double h[][4], double e2_int[][4][4][4], double density[][4], int n);
 void density(double Density[][4], gsl_matrix* coef, int n);
@@ -17,11 +17,11 @@ gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy);
 
 int main(int argc, char** argv)
 {
-    Load();
+    HartreeFock();
     return 0;
 }
 
-void Load()
+void HartreeFock()
 {
     int n = 4;
     int i, j, k, l;
