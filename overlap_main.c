@@ -130,55 +130,39 @@ int overlap_1(char * basis_base)
 
 void overlap_2(char* file_name)
 {
-    int i, j, ii,jj;
-    //int gauss_i, gauss_j;
-    int basis_count_i, basis_count_j;
-    ATOM_INFO *atom_list;
-    BASIS *basis_i, *basis_j;
-    int atom_count;
+    int i, j, basis_count;
+    BASIS *basisSet;
     double result, result_check = 0;
+
     gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
     gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
-    int ri = 0, rj = 0;
 
     INPUT_INFO *b = parse_input(file_name);    
-    //atom_output(b->c, 4);
 
-    atom_list = b->c;
-    atom_count = b->n;
+    ATOM_INFO **alist = b->atomList;
+    basis_count = b->basisCount;
+    basisSet = b->basisSet;
+    atom_output((const ATOM_INFO **)alist, b->atomCount);
+    basis_set_output(b->basisSet, b->basisCount, "BASIS");
 
-    for (i = 0; i < atom_count; i++) {
-        basis_i = atom_list[i].basis;
-        basis_count_i = atom_list[i].basis_count;
-        for (ii = 0; ii < basis_count_i; ii++) {
-            for (j = 0; j < atom_count; j++) {
-                basis_j = atom_list[j].basis;
-                basis_count_j = atom_list[j].basis_count;
-                for (jj = 0; jj < basis_count_j; jj++) {
-                    //if ((rj == 7 && (ri == 2 || ri == 3 || ri == 4)) || (ri == 7 && (rj == 2 || rj == 3 || rj == 4))) {
-                    //    printf("--------i = %d-----j = %d---------\n", ri,rj);
-                    //    result = overlap_basis(&basis_i[ii], atom_list[i].c, &basis_j[jj], atom_list[j].c, 1);
-                    //}else
-                        result = overlap_basis(&basis_i[ii], atom_list[i].c, &basis_j[jj], atom_list[j].c, 0);
-                        result_check = check_overlap(&basis_i[ii], atom_list[i].c, &basis_j[jj], atom_list[j].c, 0);
-                    // 设定一个阀值，如果积分值小于某个数就舍去
-                    if (fabs(result) < 1.0E-10)
-                        result = 0;
-                    gsl_matrix_set(m_overlap, ri, rj, result);
-                    gsl_matrix_set(m_overlap_c, ri, rj, result_check);
-                    if (rj < 7)
-                        rj++;
-                    else{
-                        rj = 0;
-                        ri++;
-                    }
-                }
+    for (i = 0; i <  basis_count; i++) {
+        for (j = 0; j < basis_count; j++) {
+            result = overlap_basis(&basisSet[i], basisSet[i].xyz, &basisSet[j],
+                            basisSet[j].xyz, 0);
+            result_check = overlap_basis(&basisSet[i], basisSet[i].xyz, 
+                            &basisSet[j], basisSet[j].xyz, 0);
+            // 设定一个阀值，如果积分值小于某个数就舍去
+            if (fabs(result) < 1.0E-12) {
+                result = 0;
+                result_check = 0;
             }
+            gsl_matrix_set(m_overlap, i, j, result);
+            gsl_matrix_set(m_overlap_c, i, j, result_check);
         }
     }
+
     matrix_output(m_overlap, 8, "OVERLAP INTEGRALS:");
     matrix_output(m_overlap_c, 8, "CHECK OVERLAP INTEGRALS:");
-
 }
 
 double check_overlap(const BASIS *b1, const gsl_vector *A, \
@@ -190,8 +174,8 @@ double check_overlap(const BASIS *b1, const gsl_vector *A, \
     GTO g1, g2;
     double result = 0;
 
-    for (i = 0; i < b1->gauss_count; i++) {
-        for (j = 0; j < b2->gauss_count; j++) {
+    for (i = 0; i < b1->gaussCount; i++) {
+        for (j = 0; j < b2->gaussCount; j++) {
             g1 = b1->gaussian[i];
             g2 = b2->gaussian[j];
 
