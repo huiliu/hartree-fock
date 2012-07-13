@@ -157,14 +157,13 @@ INPUT_INFO* parse_input(const char* file_name)
 // parse the input file, translate the input file into useable data
     FILE *f;
     INPUT_INFO *input_information;
-    int Atom_count = 0;
+    int Atom_index = 0, basis_count = 0;
     char Item[Item_count][8] = {"$COORD", "$BASIS", "$END"};
     char BasisSetName[Basis_set_count_max][8] = {"STO-3G", "6-31G"};
     ATOM_INFO *atom; // save the coordination of atoms
     int state = 0, i;
     char input_item[9];
     input_information = malloc(sizeof(INPUT_INFO));
-    input_information->c = atom = calloc(sizeof(ATOM_INFO), Atom_count_max);
 
     f = fopen(file_name, "r");
 
@@ -175,8 +174,8 @@ INPUT_INFO* parse_input(const char* file_name)
                     exit(EXIT_FAILURE);
                     return NULL;
                 }
-
                 for (i = 0; i < Item_count; i++) {
+                    // setup the state will go according the Item value
                     if (strcmp(input_item, Item[i]) == 0) {
                         state = i + 1;
                         break;
@@ -190,12 +189,23 @@ INPUT_INFO* parse_input(const char* file_name)
                     state = 0;
                     break;
                 }
-                atom[Atom_count].c = gsl_vector_alloc(3);
-                strcpy(atom[Atom_count].symbol, input_item);
-                fscanf(f, "%d", &atom[Atom_count].n);
+                // save coordination
+                input_information->gxyz = (gsl_vector**) \
+                                realloc(sizeof(gsl_vector*), (Atom_index + 1));
+                input_information->gxyz[Atom_index] = gsl_vector_alloc(3);
+                // save atom information
+                input_information->c = (ATOM_INFO**) \
+                                    realloc(sizeof(ATOM_INFO *), Atom_index+1);
+                atom = input_information->c[Atom_index];
+                // read element symbol of atom
+                strcpy(atom[Atom_index].symbol, input_item);
+                // read element core electronics of atom
+                fscanf(f, "%d", &atom[Atom_index].n);
                 for (i = 0; i < 3; i++)
-                    fscanf(f, "%lf", atom[Atom_count].c->data + i);
-                Atom_count++;
+                    // read coordination of atom
+                    fscanf(f, "%lf", atom[Atom_index].c->data + i);
+
+                Atom_index++;
                 break;
             case 2: // read the basis set information
                 fscanf(f, "%s", input_item);
@@ -209,17 +219,21 @@ INPUT_INFO* parse_input(const char* file_name)
                 switch (i) {
                     case 0: // STO-3G
                         // Set some parameters.
-                        for (j = 0; j < Atom_count; j++) {
+                        for (j = 0; j < Atom_index; j++) {
                             switch (atom[j].n) {
-                                case 1:
-                                    atom[j].basis_count = 1;
-                                    atom[j].basis = calloc(sizeof(BASIS), 1);
+                                case 1:     // the basis count of atom j
+                                    input_information->basis_count += 1;
+                                    input_information->basis_set = realloc(
+                                                sizeof(BASIS*), 
+                                                input_information->basis_count);
                                     break;
                                 case 2:
                                     break;
                                 case 7:
-                                    atom[j].basis_count = 5;
-                                    atom[j].basis = calloc(sizeof(BASIS), 5);
+                                    input_information->basis_count += 5;
+                                    input_information->basis_set = calloc(
+                                                sizeof(BASIS),
+                                                input_information->basis_count);
                                     break;
                             }
                         }
@@ -230,15 +244,15 @@ INPUT_INFO* parse_input(const char* file_name)
                 // read basis set
                 // TODO:
                 //      读完基函数直接退出，要修改的更友善
-                readbasis(f, atom, Atom_count);
-                input_information->n = Atom_count;
+                readbasis(f, atom, Atom_index);
+                input_information->n = Atom_index;
                 return input_information;
                 break;
             case 3: // block end
                 break;
         }
     }
-    input_information->n = Atom_count;
+    input_information->n = Atom_index;
     return input_information;
 }
 
