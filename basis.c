@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
 #include "basis.h"
 #include "overlap.h"
 
@@ -15,7 +15,7 @@ void* read_basis(const char * file_name)
     char symbol[5];
     double param;
     int state = 0, i;
-    int gauss_num; //row_num每一行参数的个数，gauss_num    每一块gauss函数的个数
+    int gauss_num; //  每一块gauss函数的个数
     int basis_num = 2, basis_total = 9, basis_i = 0, ib = 0;
     double tmp_alpha, tmp_coeff_1, tmp_coeff_2;     //用以临时存储从文件中读取的基函数参数信息
 
@@ -137,12 +137,14 @@ void basis_set_output(const BASIS* b, int count, char* msg)
 void atom_output(const ATOM_INFO* atom, int n)
 {
     ATOM_INFO *a=NULL;
-    int i, j;
+    int i;
     for (i = 0; i < n; i++) {
         a = (ATOM_INFO*)(atom + i);
-        printf("%s %d %d%12.7lf%12.7lf%12.7lf\n", a->symbol, a->n, a->basis_count, a->c->data[0], a->c->data[1], a->c->data[2]); 
-        for (j = 0; j < a->basis_count; j++)
-            basis_set_output(a->basis + j, 3, "Basis Function:");
+        printf("%s %d %d%12.7lf%12.7lf%12.7lf\n", a->symbol, a->n, 
+                    a->basisCount, a->coordination->data[0], 
+                    a->coordination->data[1], a->coordination->data[2]); 
+        // for (j = 0; j < a->basisCount; j++)
+        //     basis_set_output(a->basis + j, 3, "Basis Function:");
     }
 }
 
@@ -157,7 +159,7 @@ INPUT_INFO* parse_input(const char* file_name)
 // parse the input file, translate the input file into useable data
     FILE *f;
     INPUT_INFO *input_information;
-    int Atom_index = 0, basis_count = 0;
+    int Atom_index = 0;
     int j;
     char Item[Item_count][8] = {"$COORD", "$BASIS", "$END"};
     char BasisSetName[Basis_set_count_max][8] = {"STO-3G", "6-31G"};
@@ -192,9 +194,9 @@ INPUT_INFO* parse_input(const char* file_name)
                 }
                 // save coordination
                 input_information->atomList = (ATOM_INFO**) \
-                                    realloc(sizeof(ATOM_INFO *), Atom_index+1);
+                                    realloc(input_information->atomList, Atom_index+1);
                 input_information->gXYZ = (gsl_vector**) \
-                                realloc(sizeof(gsl_vector*), (Atom_index + 1));
+                                realloc(input_information->gXYZ, (Atom_index + 1));
                 // save atom information
                 atom = input_information->atomList[Atom_index] = 
                                     calloc(sizeof(ATOM_INFO), 1);
@@ -219,23 +221,22 @@ INPUT_INFO* parse_input(const char* file_name)
 
                 switch (i) {
                     case 0: // STO-3G
-                        // Set some parameters.
+                        // Set parameters of atom.
                         for (j = 0; j < Atom_index; j++) {
                             switch (atom[j].n) {
-                                case 1:     // the basis count of atom j
-                                    input_information->basis_count += 1;
-                                    int bc = input_information->basis_count;
-                                    input_information->basis_set = realloc(
-                                                sizeof(BASIS*), bc);
-                                    input_information->basis_set[]
+                                case 1:     
+                                    // total basis count
+                                    input_information->basisCount += 1;
+                                    // the basis count of atom
+                                    atom->basisCount = 1;
                                     break;
                                 case 2:
                                     break;
                                 case 7:
-                                    input_information->basis_count += 5;
-                                    input_information->basis_set = calloc(
-                                                sizeof(BASIS),
-                                                input_information->basis_count);
+                                    // total basis count
+                                    input_information->basisCount += 5;
+                                    // the basis count of atom
+                                    atom->basisCount = 5;
                                     break;
                             }
                         }
@@ -246,20 +247,20 @@ INPUT_INFO* parse_input(const char* file_name)
                 // read basis set
                 // TODO:
                 //      读完基函数直接退出，要修改的更友善
-                readbasis(f, atom, Atom_index);
-                input_information->n = Atom_index;
+                readbasis(f, input_information->basisCount);
+                input_information->atomCount = Atom_index;
                 return input_information;
                 break;
             case 3: // block end
                 break;
         }
     }
-    input_information->n = Atom_index;
+    input_information->atomCount = Atom_index;
     return input_information;
 }
 
 // 是函数read_basis针对新的数据结构的升级版
-int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
+BASIS* readbasis(FILE * f, int basisCount)
 {
 // read the part contain basis set in the input file
 // 每个原子有几个基函数需要指定说明
@@ -269,12 +270,11 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
     double param;
     int state = 0, i;
     int gauss_num; //gauss_num    每一块gauss函数的个数
-    int basis_num, basis_i = 0, ib = 0;
+    int basis_i = 0, ib = 0;
     double tmp_alpha, tmp_coeff_1, tmp_coeff_2;     //用以临时存储从文件中读取的基函数参数信息
-    int atom_index = -1;
 
     // basis用于保存所有基函数
-    BASIS *basis;
+    BASIS *basis = calloc(sizeof(BASIS), basisCount);
 
     //atom_output(atom_list, atom_count);
 
@@ -289,30 +289,26 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
             // read an atom's information
                 fscanf(f, "%s", symbol); // read the atom symbol
                 if (strcmp(symbol, "$END") == 0) {
-                    //return basis;
-                    return 0;
+                    return basis;
+                    //return 0;
                 }
-
                 fscanf(f, "%lf", &param);     // 0
-                basis = atom_list[++atom_index].basis;
-                basis_num = atom_list[atom_index].basis_count;
-                basis_i = 0;
                 // read the basis set count of every atom
+                basis_i = 0;
                 ib = 0;
                 state = 2;  // start read basis set information
                 break;
             case 2:
-                if (ib >= basis_num) {
-                    state = 0;
-                    break;
-                }else{
-                    ib++;
-                }
+                // S   3   1.00
+                fscanf(f, "%s", symbol);
+                // if it's **** goto state 1
+                if (strcmp(symbol, sparate) == 0)   state = 1;
+                fscanf(f, "%d", &gauss_num);
+                fscanf(f, "%lf", &param);
 
-                fscanf(f, "%s", symbol);        // " "S" 3   1.00  "
-                fscanf(f, "%d", &gauss_num);     // "  S "3"  1.00  " 每一块高斯函数的数目
-                fscanf(f, "%lf", &param);         // "  S  3  "1.00" "    不清楚什么用途
-                basis[basis_i].gauss_count = gauss_num;
+                // save the gaussian function count of basis
+                basis[basis_i].gaussCount += gauss_num;
+                basis[basis_i].gaussian = calloc(sizeof(GTO), gauss_num);
 
                 if (strcmp(symbol, atom_orbit_type) == 0) {
                     state = 4;  // SP 有三列数据，第一列为gaussian函数的指数，2,3列分别为2S, 2P中的组合系数
@@ -334,7 +330,7 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
 #endif
 
                 }
-                basis_i ++;
+                basis_i++;
                 ib++;
                 state = 2;  //读完一组基函数信息，状态返回，读取下一组
                 break;
@@ -348,8 +344,8 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_1;
                     basis[basis_i].gaussian[i].norm = normalize_coeff(&basis[basis_i].gaussian[i]);
 
-                    basis[basis_i+1].gauss_count = basis[basis_i+2].gauss_count \
-                    = basis[basis_i+3].gauss_count = basis[basis_i].gauss_count;
+                    basis[basis_i+1].gaussCount = basis[basis_i+2].gaussCount \
+                    = basis[basis_i+3].gaussCount = basis[basis_i].gaussCount;
                     // 2P
                     // Px
                     basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
@@ -373,7 +369,7 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                 break;
         }
     }
-    return 0;
+    return basis;
 }
 
 double normalize_coeff(const GTO *g)
