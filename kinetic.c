@@ -34,7 +34,8 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, const GTO* g2, gsl_vect
     return kinetic_xyz;
 }
 
-double kinetic_single(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int debug)
+// compute the kinetic integral between gaussian function g1 and g2
+double kinetic_gto(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int debug)
 {
     double kinetic_I_x= 0;
     double kinetic_I_y= 0;
@@ -48,6 +49,7 @@ double kinetic_single(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vec
     result = kinetic_I_x + kinetic_I_y + kinetic_I_z;
     return result;
 }
+
 
 double check_kinetic(const GTO *g1, const gsl_vector *A, \
                       const GTO *g2, const gsl_vector *B, int debug)
@@ -73,65 +75,62 @@ double check_kinetic(const GTO *g1, const gsl_vector *A, \
 
 }
 
-int main(int argc, char** argv)
+// compute the kinetic integral between basis b1 and b2
+double kinetic_basis(const BASIS* b1, const BASIS* b2, int debug)
 {
-    int i, j, ii,jj, gauss_i, gauss_j;
-    int debug = 0;
-    int basis_count_i, basis_count_j;
-    ATOM_INFO *atom_list;
-    BASIS *basis_i, *basis_j;
-    int atom_count;
-    double result = 0, result_check = 0;
-    gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
-    gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
-    int ri = 0, rj = 0;
+    int i, j;
+    int gaussCount_1, gaussCount_2;
+    double result = 0;
 
-    char* file_name = "input_file";
+    gaussCount_1 = b1->gaussCount;
+    gaussCount_2 = b2->gaussCount;
 
-    INPUT_INFO *b = parse_input(file_name);    
-    //atom_output(b->c, 4);
-
-    atom_list = b->c;
-    atom_count = b->n;
-
-    // atom
-    for (i = 0; i < atom_count; i++) {
-        basis_i = atom_list[i].basis;
-        basis_count_i = atom_list[i].basis_count;
-        // basis set of atom <i>
-        for (ii = 0; ii < basis_count_i; ii++) {
-            // atom
-            for (j = 0; j < atom_count; j++) {
-                basis_j = atom_list[j].basis;
-                basis_count_j = atom_list[j].basis_count;
-                // basis set of atom <j>
-                for (jj = 0; jj < basis_count_j; jj++) {
-                    debug = 0;
-                    if ((rj == 7 && (ri == 2 || ri == 3 || ri == 4)) || (ri == 7 && (rj == 2 || rj == 3 || rj == 4))) {
-                        printf("--------i = %d-----j = %d---------\n", ri,rj);
-                        debug = 1;
-                    }
-                    rj = 0;
-                    // gaussian function in basis
-                    for (gauss_i = 0; gauss_i < 3; gauss_i++) {
-                    // the gaussian function of basis
-                        for (gauss_j = 0; gauss_j < 3; gauss_j++) {
-                    result += kinetic_single(&basis_i[ii].gaussian[gauss_i], atom_list[i].c, \
-                                             &basis_j[jj].gaussian[gauss_j], atom_list[j].c, debug);
-               result_check += check_kinetic(&basis_i[ii].gaussian[gauss_i], atom_list[i].c, 
-                                             &basis_j[jj].gaussian[gauss_j], atom_list[j].c, 0);
-                        }
-                    // 设定一个阀值，如果积分值小于某个数就舍去
-                    }
-                    if (fabs(result) < 1.0E-10)
-                        result = 0;
-                    gsl_matrix_set(m_overlap, ii, jj, result);
-                    gsl_matrix_set(m_overlap_c, ii, jj, result);
-                } // end basis of atom <j> integral
-            }
+    for (i = 0; i < gaussCount_1; i++) {
+        for (j = 0; j < gaussCount_2; j++) {
+            result += kinetic_gto(&b1->gaussian[i], b1->xyz, &b2->gaussian[i], b2->xyz, debug);
         }
     }
-    matrix_output(m_overlap, 8, "OVERLAP INTEGRALS:");
-    matrix_output(m_overlap_c, 8, "CHECK OVERLAP INTEGRALS:");
+
+    return result;
+}
+
+void kinetic_Int_Matrix(const char* file_name)
+{
+    int debug = 0;
+    int i, j, basis_count, atomCount;
+    BASIS *basisSet;
+    double result, result_check = 0;
+
+    gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
+    gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
+
+    INPUT_INFO *b = parse_input(file_name);    
+
+    //ATOM_INFO **alist = b->atomList;
+    basis_count = b->basisCount;
+    basisSet = b->basisSet;
+    atomCount = b->atomCount;
+
+    for (i = 0; i <  basis_count; i++) {
+        for (j = 0; j < basis_count; j++) {
+            result = kinetic_basis(&basisSet[i], &basisSet[j], debug);
+            // 设定一个阀值，如果积分值小于某个数就舍去
+            if (fabs(result) < 1.0E-12) {
+                result = 0;
+                result_check = 0;
+            }
+            gsl_matrix_set(m_overlap, i, j, result);
+            gsl_matrix_set(m_overlap_c, i, j, result_check);
+        }
+    }
+    matrix_output(m_overlap, 8, "NUCLEAR");
+    matrix_output(m_overlap_c, 8, "CHECH NUCLEAR");
+}
+
+int main(int argc, char** argv)
+{
+    char* file_name = "input_file";
+
+    kinetic_Int_Matrix(file_name);
     return 0;
 }

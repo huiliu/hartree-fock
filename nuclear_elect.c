@@ -153,8 +153,8 @@ void nuclear_attraction_matrix(char* file_name)
     basisSet = b->basisSet;
     atomCount = b->atomCount;
 
-    atom_output((const ATOM_INFO **)alist, b->atomCount);
-    basis_set_output(b->basisSet, b->basisCount, "BASIS");
+    //atom_output((const ATOM_INFO **)alist, b->atomCount);
+    //basis_set_output(b->basisSet, b->basisCount, "BASIS");
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
@@ -171,7 +171,6 @@ void nuclear_attraction_matrix(char* file_name)
     }
     matrix_output(m_overlap, 8, "NUCLEAR");
     matrix_output(m_overlap_c, 8, "CHECH NUCLEAR");
-
 }
 
 double check_nuclear(const GTO* g1, const gsl_vector* A, \
