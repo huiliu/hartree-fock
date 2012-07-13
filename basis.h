@@ -22,6 +22,7 @@ typedef struct atom_INFORMATON_ {
 // 定义一个原子信息, 包括核电荷数，基函数数目，元素符号，坐标，基函数
     int n;              // Atomic Number
     char symbol[3];     // Element Symbol
+    gsl_vector* coordination;
 }ATOM_INFO;
 
 typedef struct FILE_INPUT_ {
