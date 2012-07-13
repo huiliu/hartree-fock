@@ -4,6 +4,7 @@
 #include <string.h>
 #include <gsl/gsl_matrix.h>
 #include "basis.h"
+#include "overlap.h"
 
 void* read_basis(const char * file_name)
 {
@@ -296,6 +297,7 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                 fscanf(f, "%s", symbol);        // " "S" 3   1.00  "
                 fscanf(f, "%d", &gauss_num);     // "  S "3"  1.00  " 每一块高斯函数的数目
                 fscanf(f, "%lf", &param);         // "  S  3  "1.00" "    不清楚什么用途
+                basis[basis_i].gauss_count = gauss_num;
 
                 if (strcmp(symbol, atom_orbit_type) == 0) {
                     state = 4;  // SP 有三列数据，第一列为gaussian函数的指数，2,3列分别为2S, 2P中的组合系数
@@ -304,16 +306,15 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                 }
 
                 break;
-            case 3:
+            case 3: // 当前为读取S
                 for (i = 0; i < gauss_num; i++) {
                     fscanf(f, "%lf", &tmp_alpha);
                     fscanf(f, "%lf", &tmp_coeff_1);
 
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
-                    // 注意，此处的归一化只是针对1S轨道的 (2a/pi)^(3/4) 《量子化学》中册，P50
-                    //basis[basis_i].gaussian[i].A = tmp_coeff_1 * pow(2*tmp_alpha/M_PI, (double)3.0/4);
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_1;
-#ifdef BEBUG_OUTPUT_BASIS_SET
+                    basis[basis_i].gaussian[i].norm = normalize_coeff(&basis[basis_i].gaussian[i]);
+#ifdef DEBUG_OUTPUT_BASIS_SET
                     printf("%20.10lf%20.10lf\n", basis[basis_i].gaussian[i].alpha, basis[basis_i].gaussian[i].coeff);
 #endif
 
@@ -322,7 +323,7 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                 ib++;
                 state = 2;  //读完一组基函数信息，状态返回，读取下一组
                 break;
-            case 4: // 一个gaussian函数由3个参数决定的情形
+            case 4: // 读取SP标签：S与P轨道
                 for (i = 0; i < gauss_num; i++) {
                     fscanf(f, "%lf", &tmp_alpha);
                     fscanf(f, "%lf", &tmp_coeff_1);
@@ -330,19 +331,26 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                     // 2S
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_1;
+                    basis[basis_i].gaussian[i].norm = normalize_coeff(&basis[basis_i].gaussian[i]);
+
+                    basis[basis_i+1].gauss_count = basis[basis_i+2].gauss_count \
+                    = basis[basis_i+3].gauss_count = basis[basis_i].gauss_count;
                     // 2P
                     // Px
                     basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+1].gaussian[i].coeff = tmp_coeff_2;
                     basis[basis_i+1].gaussian[i].l = 1;
+                    basis[basis_i+1].gaussian[i].norm = normalize_coeff(&basis[basis_i+1].gaussian[i]);
                     // Py
                     basis[basis_i+2].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+2].gaussian[i].coeff = tmp_coeff_2;
                     basis[basis_i+2].gaussian[i].m = 1;
+                    basis[basis_i+2].gaussian[i].norm = normalize_coeff(&basis[basis_i+2].gaussian[i]);
                     // Pz
                     basis[basis_i+3].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+3].gaussian[i].coeff = tmp_coeff_2;
                     basis[basis_i+3].gaussian[i].n = 1;
+                    basis[basis_i+3].gaussian[i].norm = normalize_coeff(&basis[basis_i+3].gaussian[i]);
                 }
                 basis_i += 4;
                 ib += 4;
@@ -351,4 +359,15 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
         }
     }
     return 0;
+}
+
+double normalize_coeff(const GTO *g)
+{
+    double alpha = g->alpha;
+    double l = g->l;
+    double m = g->m;
+    double n = g->n;
+
+    return pow(2 * alpha / M_PI, 0.75) * sqrt(pow(4*alpha, l + m + n) / \
+        (factorial_2(2*l-1) * factorial_2(2*m-1) * factorial_2(2*n-1)));
 }

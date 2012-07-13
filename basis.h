@@ -6,9 +6,10 @@
 typedef struct gto {
     // gaussian = A * exp(-a * r^2)
     // A = A * (2a/pi)^(3/4)    仅对1S轨道
-    double l, m, n;
+    int l, m, n;
     double alpha;
     double coeff;
+    double norm;
 }GTO;
 
 typedef struct _b {
@@ -37,4 +38,5 @@ void atom_output(const ATOM_INFO* atom, int n);
 
 INPUT_INFO* parse_input(const char* file_name);
 int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count);
+double normalize_coeff(const GTO *);
 #endif

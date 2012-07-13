@@ -3,8 +3,9 @@
 #include <math.h>
 #include "common.h"
 #include "overlap.h"
+#include "ints.h"
 
-double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int flags)
+double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int flags, int debug)
 {
     double kinetic_xyz = 0;
     double b = g2->alpha;
@@ -26,150 +27,111 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, const GTO* g2, gsl_vect
         g2_2.n += 2;
     }
 
-    kinetic_xyz = -0.5 * l2 * (l2 - 1) * overlap_single(g1, A, &g2_2, B);
-    kinetic_xyz += b * (2*l2 + 1) * overlap_single(g1, A, g2, B);
-    kinetic_xyz -= 2 * pow(b, 2) * overlap_single(g1, A, &g2_1, B);
+    kinetic_xyz += b * (2*l2 + 1) * overlap_gauss(*g1, A, *g2, B, debug);
+    kinetic_xyz -= 2 * pow(b, 2) * overlap_gauss(*g1, A, g2_2, B, debug);
+    kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gauss(*g1, A, g2_1, B, debug);
 
     return kinetic_xyz;
 }
 
-double kinetic_single(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vector* B)
+double kinetic_single(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int debug)
 {
     double kinetic_I_x= 0;
     double kinetic_I_y= 0;
     double kinetic_I_z= 0;
+    double result = 0;
 
-    kinetic_I_x = kinetic_I_xyz(g1, A, g2, B, 0);
-    kinetic_I_y = kinetic_I_xyz(g1, A, g2, B, 1);
-    kinetic_I_z = kinetic_I_xyz(g1, A, g2, B, 2);
+    kinetic_I_x = kinetic_I_xyz(g1, A, g2, B, 0, debug);
+    kinetic_I_y = kinetic_I_xyz(g1, A, g2, B, 1, debug);
+    kinetic_I_z = kinetic_I_xyz(g1, A, g2, B, 2, debug);
 
-    return (kinetic_I_x + kinetic_I_y + kinetic_I_z);
+    result = kinetic_I_x + kinetic_I_y + kinetic_I_z;
+    return result;
+}
+
+double check_kinetic(const GTO *g1, const gsl_vector *A, \
+                      const GTO *g2, const gsl_vector *B, int debug)
+{
+    double alpha1, alpha2, xa, ya, za, xb, yb, zb;
+    int l1, m1, n1, l2, m2, n2;
+    double result = 0;
+            alpha1 = g1->alpha;
+            alpha2 = g2->alpha;
+
+            l1 = g1->l; m1 = g1->m; n1 = g1->n;
+            l2 = g2->l; m2 = g2->m; n2 = g2->n;
+            xa = gsl_vector_get(A, 0);
+            ya = gsl_vector_get(A, 1);
+            za = gsl_vector_get(A, 2);
+
+            xb = gsl_vector_get(B, 0);
+            yb = gsl_vector_get(B, 1);
+            zb = gsl_vector_get(B, 2);
+
+            result += kinetic(alpha1, l1, m1, n1, xa, ya, za, alpha2, l2, m2, n2, xb, yb, zb);
+    return result;
+
 }
 
 int main(int argc, char** argv)
 {
-    char *basis_base = NULL;
-    if (argc < 2)
-        basis_base = "basis_set";
-    else
-        basis_base = argv[1];
+    int i, j, ii,jj, gauss_i, gauss_j;
+    int debug = 0;
+    int basis_count_i, basis_count_j;
+    ATOM_INFO *atom_list;
+    BASIS *basis_i, *basis_j;
+    int atom_count;
+    double result = 0, result_check = 0;
+    gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
+    gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
+    int ri = 0, rj = 0;
 
-    BASIS *b = read_basis(basis_base);    
+    char* file_name = "input_file";
 
-    double result = 0, tmp;
-    int i, j, u, v;
-    int basis_count = 8;
-    // 重叠积分不位置有关，基组处于各自的中心，
-    // 通过记录每个原子所包含的基函数数目来判断某个基函数处于哪里
-    int atom_1_basis_num, atom_2_basis_num;
-    gsl_matrix *m_overlap = gsl_matrix_alloc(basis_count, basis_count);
-    gsl_vector H[2];
-    gsl_vector *N = gsl_vector_calloc(3);
-    gsl_vector *h1 = gsl_vector_calloc(3);
-    gsl_vector *h2 = gsl_vector_calloc(3);
-    gsl_vector *h3 = gsl_vector_calloc(3);
+    INPUT_INFO *b = parse_input(file_name);    
+    //atom_output(b->c, 4);
 
-    N->data[0] = 0.30926;
-    N->data[1] = 0.30926;
-    N->data[2] = 0.30926;
+    atom_list = b->c;
+    atom_count = b->n;
 
-    h1->data[0] = 2.17510;
-    h1->data[1] = 0.0;
-    h1->data[2] = 0.0;
-
-    h2->data[0] = 0.0;
-    h2->data[1] = 2.17510;
-    h2->data[2] = 0.0;
-
-    h3->data[0] = 0.0;
-    h3->data[1] = 0.0;
-    h3->data[2] = 2.17510;
-
-#ifdef DEBUG_GAUSS_BASIS_INT
-    gsl_matrix *gauss_int = gsl_matrix_calloc(3, 3);
-#endif
-
-
-#undef DEBUG_CHECK_INPUT_BASIS
-#ifdef DEBUG_CHECK_INPUT_BASIS
-    basis_set_output(&b[0], 3, "N-1S:\n");
-    basis_set_output(&b[1], 3, "N-2S:\n");
-    basis_set_output(&b[2], 3, "N-2P:\n");
-    basis_set_output(&b[3], 3, "N-2P:\n");
-    basis_set_output(&b[4], 3, "N-2P:\n");
-    basis_set_output(&b[5], 3, "H-1S:\n");
-    basis_set_output(&b[6], 3, "H-1S:\n");
-    basis_set_output(&b[7], 3, "H-1S:\n");
-#endif
-
-    atom_1_basis_num = 5;
-    atom_2_basis_num = 3;   //暂时只考虑N原子的一个P轨道
-    // 基函数的数目
-    for (u = 0; u < basis_count; u++) {
-        for (v = 0; v < basis_count; v++) {
-            result = 0;
-
-            // 判断某个基组属于哪个中心
-            // 此处基函数是按顺序存放在一维数组中
-            if (u < atom_1_basis_num) {
-            // 0 - 4为N的基函数
-                H[0] = *N;
-            }else if (u == 5){
-                H[0] = *h1;
-            }else if (u == 6){
-                H[0] = *h2;
-            }else if (u == 7){
-                H[0] = *h3;
+    // atom
+    for (i = 0; i < atom_count; i++) {
+        basis_i = atom_list[i].basis;
+        basis_count_i = atom_list[i].basis_count;
+        // basis set of atom <i>
+        for (ii = 0; ii < basis_count_i; ii++) {
+            // atom
+            for (j = 0; j < atom_count; j++) {
+                basis_j = atom_list[j].basis;
+                basis_count_j = atom_list[j].basis_count;
+                // basis set of atom <j>
+                for (jj = 0; jj < basis_count_j; jj++) {
+                    debug = 0;
+                    if ((rj == 7 && (ri == 2 || ri == 3 || ri == 4)) || (ri == 7 && (rj == 2 || rj == 3 || rj == 4))) {
+                        printf("--------i = %d-----j = %d---------\n", ri,rj);
+                        debug = 1;
+                    }
+                    rj = 0;
+                    // gaussian function in basis
+                    for (gauss_i = 0; gauss_i < 3; gauss_i++) {
+                    // the gaussian function of basis
+                        for (gauss_j = 0; gauss_j < 3; gauss_j++) {
+                    result += kinetic_single(&basis_i[ii].gaussian[gauss_i], atom_list[i].c, \
+                                             &basis_j[jj].gaussian[gauss_j], atom_list[j].c, debug);
+               result_check += check_kinetic(&basis_i[ii].gaussian[gauss_i], atom_list[i].c, 
+                                             &basis_j[jj].gaussian[gauss_j], atom_list[j].c, 0);
+                        }
+                    // 设定一个阀值，如果积分值小于某个数就舍去
+                    }
+                    if (fabs(result) < 1.0E-10)
+                        result = 0;
+                    gsl_matrix_set(m_overlap, ii, jj, result);
+                    gsl_matrix_set(m_overlap_c, ii, jj, result);
+                } // end basis of atom <j> integral
             }
-
-            if (v < atom_1_basis_num) {
-            // 0 - 4为N的基函数
-                H[1] = *N;
-            }else if (v == 5){
-                H[1] = *h1;
-            }else if (v == 6){
-                H[1] = *h2;
-            }else if (v == 7){
-                H[1] = *h3;
-            }
-
-#undef DEBUG_BASIS_COOR
-#ifdef DEBUG_BASIS_COOR
-    printf("-------------------%d-%d---------------------------\n", u, v);
-            basis_set_output(&b[u], 3, "第一个基函数参数:\n");
-            basis_set_output(&b[v], 3, "第二个基函数参数:\n");
-            vector_output(&H[0], 3, "第一个H原子的坐标为:\n");
-            vector_output(&H[1], 3, "第二个H原子的坐标为:\n");
-#endif
-            // Gaussian函数的数目为3
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 3; j++) {
-                    tmp = kinetic_single(&b[u].gaussian[i], &H[0], &b[v].gaussian[j], &H[1]);
-                    result += tmp;
-#ifdef DEBUG_GAUSS_BASIS_INT
-                    gsl_matrix_set(gauss_int, i, j, tmp);
-#endif
-                }
-            }
-#ifdef DEBUG_GAUSS_BASIS_INT
-            matrix_output(gauss_int, 3, "Gaussian函数的积分\n");
-#endif
-            // 设定一个阀值，如果积分值小于某个数就舍去
-            if (fabs(result) < 1.0E-10)
-                result = 0;
-
-            gsl_matrix_set(m_overlap, u, v, result);
-//            printf("u = %d\tv = %d%20.10lf\n", u, v, result);
         }
     }
-
-    matrix_output(m_overlap, basis_count, "动能积分\n");
-    gsl_matrix_free(m_overlap);
-#ifdef DEBUG_GAUSS_BASIS_INT
-    gsl_matrix_free(gauss_int);
-#endif
-    gsl_vector_free(h1);
-    gsl_vector_free(h2);
-
+    matrix_output(m_overlap, 8, "OVERLAP INTEGRALS:");
+    matrix_output(m_overlap_c, 8, "CHECK OVERLAP INTEGRALS:");
     return 0;
 }

@@ -7,13 +7,16 @@
 #include "basis.h"
 #include "common.h"
 #include "overlap.h"
+#include "ints.h"
+
+double check_overlap(const BASIS *, const gsl_vector *, const BASIS *, const gsl_vector *, int debug);
 
 int overlap_1(char * basis_base)
 {
     BASIS *b = read_basis(basis_base);    
 
-    double result = 0, tmp;
-    int i, j, u, v;
+    double result = 0;
+    int u, v;
     int basis_count = 8;
     // 重叠积分不位置有关，基组处于各自的中心，
     // 通过记录每个原子所包含的基函数数目来判断某个基函数处于哪里
@@ -97,16 +100,10 @@ int overlap_1(char * basis_base)
             vector_output(&H[0], 3, "第一个H原子的坐标为:\n");
             vector_output(&H[1], 3, "第二个H原子的坐标为:\n");
 #endif
-            // Gaussian函数的数目为3
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 3; j++) {
-                    tmp = overlap_single(&b[u].gaussian[i], &H[0], &b[v].gaussian[j], &H[1]);
-                    result += tmp;
+                    result = overlap_basis(&b[u], &H[0], &b[v], &H[1], 0);
 #ifdef DEBUG_GAUSS_BASIS_INT
                     gsl_matrix_set(gauss_int, i, j, tmp);
 #endif
-                }
-            }
 #ifdef DEBUG_GAUSS_BASIS_INT
             matrix_output(gauss_int, 3, "Gaussian函数的积分\n");
 #endif
@@ -130,16 +127,18 @@ int overlap_1(char * basis_base)
     return 0;
 }
 
+
 void overlap_2(char* file_name)
 {
     int i, j, ii,jj;
-    int gauss_i, gauss_j;
+    //int gauss_i, gauss_j;
     int basis_count_i, basis_count_j;
     ATOM_INFO *atom_list;
     BASIS *basis_i, *basis_j;
     int atom_count;
-    double result, tmp;
+    double result, result_check = 0;
     gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
+    gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
     int ri = 0, rj = 0;
 
     INPUT_INFO *b = parse_input(file_name);    
@@ -156,18 +155,17 @@ void overlap_2(char* file_name)
                 basis_j = atom_list[j].basis;
                 basis_count_j = atom_list[j].basis_count;
                 for (jj = 0; jj < basis_count_j; jj++) {
-                    result = 0;
-                    for (gauss_i = 0; gauss_i < 3; gauss_i++) {
-                        for (gauss_j = 0; gauss_j < 3; gauss_j++) {
-                            tmp = overlap_single(&basis_i[ii].gaussian[gauss_i], atom_list[i].c, &basis_j[jj].gaussian[gauss_j], atom_list[j].c);
-                            result += tmp;
-                        }
-                    }
-                    //printf("%15.8lf", result);
+                    //if ((rj == 7 && (ri == 2 || ri == 3 || ri == 4)) || (ri == 7 && (rj == 2 || rj == 3 || rj == 4))) {
+                    //    printf("--------i = %d-----j = %d---------\n", ri,rj);
+                    //    result = overlap_basis(&basis_i[ii], atom_list[i].c, &basis_j[jj], atom_list[j].c, 1);
+                    //}else
+                        result = overlap_basis(&basis_i[ii], atom_list[i].c, &basis_j[jj], atom_list[j].c, 0);
+                        result_check = check_overlap(&basis_i[ii], atom_list[i].c, &basis_j[jj], atom_list[j].c, 0);
                     // 设定一个阀值，如果积分值小于某个数就舍去
                     if (fabs(result) < 1.0E-10)
                         result = 0;
                     gsl_matrix_set(m_overlap, ri, rj, result);
+                    gsl_matrix_set(m_overlap_c, ri, rj, result_check);
                     if (rj < 7)
                         rj++;
                     else{
@@ -178,19 +176,55 @@ void overlap_2(char* file_name)
             }
         }
     }
-    matrix_output(m_overlap, 8, "Overlap");
+    matrix_output(m_overlap, 8, "OVERLAP INTEGRALS:");
+    matrix_output(m_overlap_c, 8, "CHECK OVERLAP INTEGRALS:");
 
+}
+
+double check_overlap(const BASIS *b1, const gsl_vector *A, \
+                      const BASIS *b2, const gsl_vector *B, int debug)
+{
+    int i, j;
+    double alpha1, alpha2, xa, ya, za, xb, yb, zb;
+    int l1, m1, n1, l2, m2, n2;
+    GTO g1, g2;
+    double result = 0;
+
+    for (i = 0; i < b1->gauss_count; i++) {
+        for (j = 0; j < b2->gauss_count; j++) {
+            g1 = b1->gaussian[i];
+            g2 = b2->gaussian[j];
+
+            alpha1 = g1.alpha;
+            alpha2 = g2.alpha;
+
+            l1 = g1.l; m1 = g1.m; n1 = g1.n;
+            l2 = g2.l; m2 = g2.m; n2 = g2.n;
+            xa = gsl_vector_get(A, 0);
+            ya = gsl_vector_get(A, 1);
+            za = gsl_vector_get(A, 2);
+
+            xb = gsl_vector_get(B, 0);
+            yb = gsl_vector_get(B, 1);
+            zb = gsl_vector_get(B, 2);
+
+            result += overlap(alpha1, l1, m1, n1, xa, ya, za, alpha2, l2, m2, n2, xb, yb, zb);
+        }
+    }
+    return result;
 }
 
 int main(int argc, char** argv)
 {
     char *basis_base = NULL;
+    /*
     if (argc < 2)
         basis_base = "basis_set";
     else
         basis_base = argv[1];
     printf("---------Read data from \"%s\"--------------------\n", basis_base);
     overlap_1(basis_base);
+    */
 
     basis_base = "input_file";
     printf("---------Read data from \"%s\"--------------------\n", basis_base);

@@ -1,10 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-//#include <gsl/gsl_linalg.h>
-//#include <gsl/gsl_vector.h>
-//#include <gsl/gsl_blas.h>
-//#include "basis.h"
 #include "common.h"
 #include "overlap.h"
 
@@ -42,133 +38,161 @@ double fact_l_lambda(int l, int lambda)
     return (double)factorial(l) / factorial(lambda) / factorial(l - lambda);
 }
 
-double fi_l_ll_pax_pbx(int ii, int l, int ll, double pax, double pbx)
+double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags)
 {
-// 公式可能有问题，见《量子化学》中册P63第一个公式
-    int i, j;
+// 《量子化学》中册P63第一个公式
+    int i;
     double sum = 0;
 
-    for (i = 0; i <= l; i++) {
-        for (j = 0; j <= ll; j++) {
-            if ((i + j) == ii)
-                sum += (fact_l_lambda(l, i) * fact_l_lambda(ll, j) * pow(pax, l - i) * pow(pbx, ll - j));        
+    for (i = 0; i <= l1; i++) {
+        if (ii - l1 <= i && i <= l2) {
+            sum += (fact_l_lambda(l1, ii - i) * fact_l_lambda(l2, i) * \
+                                pow(pax, l1 -ii+ i) * pow(pbx, l2 - i));
         }
     }
     return  sum;
 }
 
-double I_xyz(double a, int l, double pax, double b, int ll, double pbx)
+double I_xyz(int l, double pax, int ll, double pbx, double gamma, int flags)
 {
 // 《量子化学》中册 P63 (10.6.8) (10.6.9) (10.6.10)
     int i;
     double sum = 0;
 
-    for (i = 0; i <= (l + ll) / 2; i++)
-        sum += fi_l_ll_pax_pbx(2*i, l, ll, pax, pbx) * factorial_2(2i - 1) / pow(2 * (a + b), i);
-    return sum * sqrt(M_PI / (a + b));
+    for (i = 0; i <= (l + ll) / 2; i++) {
+        if (flags == 1)
+            printf("l = %dll = %dfi = %lf\n",l,ll, fi_l_ll_pax_pbx(2*i, l, ll, pax, pbx, flags));
+        sum += fi_l_ll_pax_pbx(2*i, l, ll, pax, pbx, flags) * \
+                        factorial_2(2i - 1) / pow(2 * gamma, i);
+    }
+    return sum;
 }
 
 double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B)
 {
 // 归一化系数 《量子化学》中册 P58 (10.4.1b)
 // A, B 为坐标
-    /*
-    gsl_vector *AB = gsl_vector_alloc(3);
 
-    gsl_vector_memcpy(AB, A);
-    gsl_vector_sub(AB, B);
+    double result, norm_2;
+    double x1, y1, z1, x2, y2, z2;
 
-    double result = exp(-a * b / (a + b) * pow(gsl_blas_dnrm2(AB), 2));
-    gsl_vector_free(AB);
-    */
-    double AB_2 = 0, tmp = 0;
-    int i;
-    for (i = 0; i < 3; i++) {
-        tmp = A->data[i] - B->data[i];
-        AB_2 += (tmp * tmp);
-    }
-    double result = exp((-a) * b / (a + b) * AB_2);
+    x1 = gsl_vector_get(A, 0);
+    y1 = gsl_vector_get(A, 1);
+    z1 = gsl_vector_get(A, 2);
+
+    x2 = gsl_vector_get(B, 0);
+    y2 = gsl_vector_get(B, 1);
+    z2 = gsl_vector_get(B, 2);
+
+
+    norm_2 = (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2);
+    result = exp(-a * b * norm_2 / (a + b));
+
     return result;
 }
 
-gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, const double b, const gsl_vector *B)
+gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, 
+                            const double b, const gsl_vector *B, int flags)
 {
 // Gaussian函数乘积定理计算双中心
 // 关于此部分不甚明白
     int i;
     double gamma = a + b;
+    double x1, x2, tmp;
+
     gsl_vector *center = gsl_vector_alloc(3);
     
-    for (i = 0; i < 3; i++)
-        center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
-//#undef DEBUG_GAUSSIAN_PRODUCT
-#ifdef DEBUG_GAUSSIAN_PRODUCT
-    printf("----------------------------------------\n");
-    vector_output(A, 3, "用于计算中心的第一个坐标:");
-    vector_output(B, 3, "用于计算中心的第二个坐标:");
-    printf("alpha1 =%10.6lf\talpha1 =%10.6lf\n", a, b);
-    vector_output(center, 3, "中心为:");
-#endif
+    for (i = 0; i < 3; i++) {
+        x1 = gsl_vector_get(A, i);
+        x2 = gsl_vector_get(B, i);
+        tmp = (a * x1 +  b*x2) / gamma;
+        gsl_vector_set(center, i, tmp);
+    // 与上面看似等同，但是计算的S与P轨道相互作用不一样
+    //    center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
+    }
+
+    // DEBUG
+    if (flags == 1) {
+        gsl_vector * test = gsl_vector_alloc(3);
+        gsl_vector * test2 = gsl_vector_alloc(3);
+        gsl_vector_set(test, 0, 0);
+        gsl_vector_set(test, 1, 0);
+        gsl_vector_set(test, 2, 2.175);
+        gsl_vector_memcpy(test2, test);
+        gsl_vector_sub(test, B);
+        gsl_vector_sub(test2, A);
+        if (gsl_vector_max(test) < 1.0E-10 || gsl_vector_max(test2) < 1.0E-10) {
+        //printf("----------------------------------------\n");
+        vector_output(A, 3, "用于计算中心的第一个坐标:");
+        vector_output(B, 3, "用于计算中心的第二个坐标:");
+        printf("alpha1 =%10.6lf\talpha2 =%10.6lf\n", a, b);
+        vector_output(center, 3, "中心为:");
+        }
+        gsl_vector_free(test);
+        gsl_vector_free(test2);
+    }
+
     return center;
 }
 
-double normalize_coeff(const GTO *g)
-{
-    double alpha = g->alpha;
-    double l = g->l;
-    double m = g->m;
-    double n = g->n;
-
-    return pow(2 * alpha / M_PI, 0.75) * sqrt(pow(4*alpha, l + m + n) / \
-        (factorial_2(2*l-1) * factorial_2(2*m-1) * factorial_2(2*n-1)));
-}
-
-// 计算两个Gaussian函数的重叠积分
-double overlap_single(const GTO *g1, const gsl_vector *A, const GTO *g2, const gsl_vector *B)
+double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_vector* B, int debug)
 {
     double K, gamma, Ix, Iy, Iz, result = 0;
     double normal1, normal2;
-    gsl_vector * A_weight = gsl_vector_alloc(3);
-    gsl_vector * B_weight = gsl_vector_alloc(3);
-    gsl_vector * P = gaussian_product_center(g1->alpha, A, g2->alpha, B);
-#ifdef DEBUG_DOUBLE_CENTER
-    vector_output(gauss_double_center, 3, "Gaussian双电子中心:\n");
-#endif
-    gamma = g1->alpha + g2->alpha;
-    K = gauss_K(g1->alpha, A, g2->alpha, B);
+    double coeff1, coeff2;
+    gsl_vector *PA, *PB, *P;
 
-    // 计算pax, pay, paz, pbx,...
-    // 关于此部分不甚明白, 参照PyQuante pyints.py中计算重叠积分部分
-    gsl_vector_memcpy(A_weight, A);
-    gsl_vector_sub(A_weight, P);
-    gsl_vector_memcpy(B_weight, B);
-    gsl_vector_sub(B_weight, P);
-#ifdef DEBUG_GAUSSIAN_PRODUCT
-    vector_output(A_weight, 3, "PA_x_y_z");
-    vector_output(B_weight, 3, "PB_x_y_z");
-#endif
-    Ix = I_xyz(g1->alpha, g1->l, -A_weight->data[0], g2->alpha, g2->l, -B_weight->data[0]);
-    Iy = I_xyz(g1->alpha, g1->m, -A_weight->data[1], g2->alpha, g2->m, -B_weight->data[1]);
-    Iz = I_xyz(g1->alpha, g1->n, -A_weight->data[2], g2->alpha, g2->n, -B_weight->data[2]);
+    PA = gsl_vector_alloc(3);
+    PB = gsl_vector_alloc(3);
 
-    normal1 = normalize_coeff(g1);
-    normal2 = normalize_coeff(g2);
-//#define DEBUG_OVERLAP_SINGLE
-#ifdef DEBUG_OVERLAP_SINGLE
-    /*printf("K= %8.6lf Ix=%9.6lf Iy=%9.6lf Iy=%9.6lf ", K, Ix, Iy, Iz);
-    //printf("N1=%10.6lf N2=%10.6lf Coef1=%10.6lf Coef2=%10.6lf", \
-    //    normalize_coeff(g1), normalize_coeff(g2), g1->coeff, g2->coeff);
-    */
-    //printf("%8.6lf %9.6lf %9.6lf %9.6lf ", K, Ix, Iy, Iz);
-    printf("%10.6lf %10.6lf %10.6lf %10.6lf", \
-         g1->coeff, g2->coeff, normal1, normal2);
-#endif
-    result = K * Ix * Iy * Iz * g1->coeff * g2->coeff * normal1 * normal2;
-#ifdef DEBUG_OVERLAP_SINGLE
-    printf("%10.6lf\n", result);
-#endif
-    gsl_vector_free(A_weight);
-    gsl_vector_free(B_weight);
+    normal1 = g1.norm;
+    normal2 = g2.norm;
+    coeff1 = g1.coeff;
+    coeff2 = g2.coeff;
+
+    // compute the coordination of P. 《量子化学》中册, P77
+    P = gaussian_product_center(g1.alpha, A, g2.alpha, B, debug);
+    gsl_vector_memcpy(PA, A);
+    gsl_vector_memcpy(PB, B);
+
+    gsl_vector_sub(PA, P);
+    gsl_vector_sub(PB, P);
+
+    gamma = g1.alpha + g2.alpha;
+
+
+    Ix = I_xyz(g1.l, -PA->data[0], g2.l, -PB->data[0], gamma, debug);
+    Iy = I_xyz(g1.m, -PA->data[1], g2.m, -PB->data[1], gamma, debug);
+    Iz = I_xyz(g1.n, -PA->data[2], g2.n, -PB->data[2], gamma, debug);
+
+    K = gauss_K(g1.alpha, A, g2.alpha, B);
+    result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
+    if (debug == 1) {
+                printf("--------------------------------------------\n");
+                printf("%15.8lf%15.8lf%15.8lf%15.8lf%15.8lf\n", K, Ix, Iy, Iz, result);
+    }
+    gsl_vector_free(P);
+    gsl_vector_free(PA);
+    gsl_vector_free(PB);
+    return result;
+}
+// 计算两个基函数的重叠积分
+double overlap_basis(const BASIS *b1, const gsl_vector *A, \
+                      const BASIS *b2, const gsl_vector *B, int debug)
+{
+    //int flags = 0; // debug
+    int i, j;
+    double result = 0;
+    GTO g1, g2;
+
+    // 对组成基组的Gaussian函数循环
+    for (i = 0; i < b1->gauss_count; i++) {
+        for (j = 0; j < b2->gauss_count; j++) {
+            g1 = b1->gaussian[i];
+            g2 = b2->gaussian[j];
+            result += overlap_gauss(g1, A, g2, B, debug);
+        }
+    }
     return result;
 }
 /*
