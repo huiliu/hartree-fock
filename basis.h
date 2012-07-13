@@ -13,7 +13,7 @@ typedef struct gto {
 
 typedef struct _b {
 // the parameter of basis function
-    int gauss_count;
+    int gaussCount;
     GTO* gaussian;   // 3 表示一个基函数由3个gaussian函数构成
     gsl_vector* xyz;
 }BASIS;
@@ -21,6 +21,7 @@ typedef struct _b {
 typedef struct atom_INFORMATON_ {
 // 定义一个原子信息, 包括核电荷数，基函数数目，元素符号，坐标，基函数
     int n;              // Atomic Number
+    int basisCount;    // basis function count
     char symbol[3];     // Element Symbol
     gsl_vector* coordination;
 }ATOM_INFO;
@@ -39,6 +40,6 @@ void basis_set_output(const BASIS*, int, char* );
 void atom_output(const ATOM_INFO* atom, int n);
 
 INPUT_INFO* parse_input(const char* file_name);
-int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count);
+BASIS* readbasis(FILE * f, int basisCount);
 double normalize_coeff(const GTO *);
 #endif
