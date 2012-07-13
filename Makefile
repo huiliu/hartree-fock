@@ -18,7 +18,7 @@ ints.o: ints.c
 	gcc ints.c -lm -Wall -g -c -o ints.o
 
 basis.o: basis.c basis.h
-	gcc basis.c -c -Wall -g -lm -o basis.o
+	gcc basis.c -c -Wall -g -lm -lgsl -o basis.o
 
 overlap.o: overlap.c overlap.h basis.o common.o
 	gcc overlap.c basis.o common.o -c -Wall -g -lm -lgsl -o overlap.o

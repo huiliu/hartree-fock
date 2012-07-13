@@ -186,8 +186,8 @@ double overlap_basis(const BASIS *b1, const gsl_vector *A, \
     GTO g1, g2;
 
     // 对组成基组的Gaussian函数循环
-    for (i = 0; i < b1->gauss_count; i++) {
-        for (j = 0; j < b2->gauss_count; j++) {
+    for (i = 0; i < b1->gaussCount; i++) {
+        for (j = 0; j < b2->gaussCount; j++) {
             g1 = b1->gaussian[i];
             g2 = b2->gaussian[j];
             result += overlap_gauss(g1, A, g2, B, debug);
