@@ -146,7 +146,7 @@ void atom_output(const ATOM_INFO* atom, int n)
     }
 }
 
-// -------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // 读取基组方法的重新实现
 #define Item_count              3
 #define Atom_count_max          4
@@ -158,6 +158,7 @@ INPUT_INFO* parse_input(const char* file_name)
     FILE *f;
     INPUT_INFO *input_information;
     int Atom_index = 0, basis_count = 0;
+    int j;
     char Item[Item_count][8] = {"$COORD", "$BASIS", "$END"};
     char BasisSetName[Basis_set_count_max][8] = {"STO-3G", "6-31G"};
     ATOM_INFO *atom; // save the coordination of atoms
@@ -190,32 +191,32 @@ INPUT_INFO* parse_input(const char* file_name)
                     break;
                 }
                 // save coordination
-                input_information->gxyz = (gsl_vector**) \
-                                realloc(sizeof(gsl_vector*), (Atom_index + 1));
-                input_information->gxyz[Atom_index] = gsl_vector_alloc(3);
-                // save atom information
-                input_information->c = (ATOM_INFO**) \
+                input_information->atomList = (ATOM_INFO**) \
                                     realloc(sizeof(ATOM_INFO *), Atom_index+1);
-                atom = input_information->c[Atom_index];
+                input_information->gXYZ = (gsl_vector**) \
+                                realloc(sizeof(gsl_vector*), (Atom_index + 1));
+                // save atom information
+                atom = input_information->atomList[Atom_index] = 
+                                    calloc(sizeof(ATOM_INFO), 1);
+                atom->coordination = input_information->gXYZ[Atom_index] = \
+                                                        gsl_vector_alloc(3);
                 // read element symbol of atom
-                strcpy(atom[Atom_index].symbol, input_item);
+                strcpy(atom->symbol, input_item);
                 // read element core electronics of atom
-                fscanf(f, "%d", &atom[Atom_index].n);
+                fscanf(f, "%d", &atom->n);
                 for (i = 0; i < 3; i++)
                     // read coordination of atom
-                    fscanf(f, "%lf", atom[Atom_index].c->data + i);
+                    fscanf(f, "%lf", atom->coordination->data + i);
 
                 Atom_index++;
                 break;
             case 2: // read the basis set information
                 fscanf(f, "%s", input_item);
-
                 for (i = 0; i < Basis_set_count_max; i++) {
                     if (strcmp(input_item, BasisSetName[i]) == 0)
                         break;
                 }
 
-                int j;
                 switch (i) {
                     case 0: // STO-3G
                         // Set some parameters.
@@ -223,9 +224,10 @@ INPUT_INFO* parse_input(const char* file_name)
                             switch (atom[j].n) {
                                 case 1:     // the basis count of atom j
                                     input_information->basis_count += 1;
+                                    int bc = input_information->basis_count;
                                     input_information->basis_set = realloc(
-                                                sizeof(BASIS*), 
-                                                input_information->basis_count);
+                                                sizeof(BASIS*), bc);
+                                    input_information->basis_set[]
                                     break;
                                 case 2:
                                     break;
@@ -272,7 +274,6 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
     int atom_index = -1;
 
     // basis用于保存所有基函数
-    //BASIS *basis = calloc(sizeof(BASIS), basis_total);
     BASIS *basis;
 
     //atom_output(atom_list, atom_count);
@@ -284,9 +285,9 @@ int readbasis(FILE * f, ATOM_INFO* atom_list, int atom_count)
                 // symbol == "****", start read atom information
                 if (strcmp(symbol, sparate) == 0)   state = 1;
                 break;
-            case 1: // read an atom's information, such as the line 11 21 27 33 of this file
-                //if (fscanf(f, "%s", symbol) == EOF) // 
-                fscanf(f, "%s", symbol); // "H" read the atom symbol, initialize some parameter which i donn't know now
+            case 1: 
+            // read an atom's information
+                fscanf(f, "%s", symbol); // read the atom symbol
                 if (strcmp(symbol, "$END") == 0) {
                     //return basis;
                     return 0;
