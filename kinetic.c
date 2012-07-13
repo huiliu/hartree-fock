@@ -5,7 +5,8 @@
 #include "overlap.h"
 #include "ints.h"
 
-double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int flags, int debug)
+double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, 
+                     const GTO* g2, gsl_vector* B, int flags, int debug)
 {
     double kinetic_xyz = 0;
     double b = g2->alpha;
@@ -35,7 +36,8 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, const GTO* g2, gsl_vect
 }
 
 // compute the kinetic integral between gaussian function g1 and g2
-double kinetic_gto(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vector* B, int debug)
+double kinetic_gto(const GTO *g1, const gsl_vector* A, 
+                   const GTO* g2, gsl_vector* B, int debug)
 {
     double kinetic_I_x= 0;
     double kinetic_I_y= 0;
@@ -51,14 +53,30 @@ double kinetic_gto(const GTO *g1, const gsl_vector* A, const GTO* g2, gsl_vector
 }
 
 
-double check_kinetic(const GTO *g1, const gsl_vector *A, \
-                      const GTO *g2, const gsl_vector *B, int debug)
+double check_kinetic(const BASIS* b1, const BASIS* b2, int debug)
 {
+    int i, j;
+    int gaussCount_1, gaussCount_2;
     double alpha1, alpha2, xa, ya, za, xb, yb, zb;
     int l1, m1, n1, l2, m2, n2;
+    GTO *g1, *g2;
+    gsl_vector *A, *B;
     double result = 0;
+
+    gaussCount_1 = b1->gaussCount;
+    gaussCount_2 = b2->gaussCount;
+
+    for (i = 0; i < gaussCount_1; i++) {
+        for (j = 0; j < gaussCount_2; j++) {
+            g1= &b1->gaussian[i];
+            g2= &b2->gaussian[j];
+
+            A = b1->xyz;
+            B = b2->xyz;
+
             alpha1 = g1->alpha;
             alpha2 = g2->alpha;
+
 
             l1 = g1->l; m1 = g1->m; n1 = g1->n;
             l2 = g2->l; m2 = g2->m; n2 = g2->n;
@@ -70,7 +88,10 @@ double check_kinetic(const GTO *g1, const gsl_vector *A, \
             yb = gsl_vector_get(B, 1);
             zb = gsl_vector_get(B, 2);
 
-            result += kinetic(alpha1, l1, m1, n1, xa, ya, za, alpha2, l2, m2, n2, xb, yb, zb);
+            result += kinetic(alpha1, l1, m1, n1, xa, ya, za, 
+                              alpha2, l2, m2, n2, xb, yb, zb);
+        }
+    }
     return result;
 
 }
@@ -87,7 +108,8 @@ double kinetic_basis(const BASIS* b1, const BASIS* b2, int debug)
 
     for (i = 0; i < gaussCount_1; i++) {
         for (j = 0; j < gaussCount_2; j++) {
-            result += kinetic_gto(&b1->gaussian[i], b1->xyz, &b2->gaussian[i], b2->xyz, debug);
+            result += kinetic_gto(&b1->gaussian[i], b1->xyz, 
+                                  &b2->gaussian[j], b2->xyz, debug);
         }
     }
 
@@ -114,6 +136,7 @@ void kinetic_Int_Matrix(const char* file_name)
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
             result = kinetic_basis(&basisSet[i], &basisSet[j], debug);
+            result_check = check_kinetic(&basisSet[i], &basisSet[j], debug);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
