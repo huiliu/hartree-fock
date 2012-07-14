@@ -3,8 +3,6 @@
 #ifndef __INTEGRAL__BASIS__
 #define __INTEGRAL__BASIS__
 typedef struct gto {
-    // gaussian = A * exp(-a * r^2)
-    // A = A * (2a/pi)^(3/4)    仅对1S轨道
     int l, m, n;
     double alpha;
     double coeff;
@@ -36,6 +34,7 @@ typedef struct FILE_INPUT_ {
 }INPUT_INFO;
 
 void* read_basis(const char * );
+void gto_output(const GTO* g, int count, char* msg);
 void basis_set_output(const BASIS*, int, char* );
 void atom_output(const ATOM_INFO** atom, int n);
 
