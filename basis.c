@@ -118,19 +118,31 @@ void* read_basis(const char * file_name)
 // 参数 count 表示一个基函数由count个gaussian函数组成
 void basis_set_output(const BASIS* b, int count, char* msg)
 {
-    int i, j;
-    double alpha, coeff, l, m, n;
+    int i;
     printf("%s\n", msg);
     for (i = 0; i < count; i++) {
         vector_output(b[i].xyz, 3, "基组坐标:");
-        for (j = 0; j < b[i].gaussCount; j++) {
-            alpha = b[i].gaussian[j].alpha;
-            coeff = b[i].gaussian[j].coeff;
-            l = b[i].gaussian[j].l;
-            m = b[i].gaussian[j].m;
-            n = b[i].gaussian[j].n;
-            printf("%12.8lf%12.8lf\t%g\t%g\t%g\n", alpha, coeff, l, m, n);
-        }
+        gto_output(b[i].gaussian, b[i].gaussCount, "基函数");
+    }
+}
+
+void gto_output(const GTO* g, int count, char* msg)
+{
+    int i;
+    double alpha, coeff, norm;
+    int l, m, n;
+
+    printf("%s\n", msg);
+    for (i = 0; i < count; i++)
+    {
+        l = (g+i)->l;
+        m = (g+i)->m;
+        n = (g+i)->n;
+        alpha = (g+i)->alpha;
+        coeff = (g+i)->coeff;
+        norm = (g+i)->norm;
+        printf("l=%d m=%d n=%d a=%12.8lf c=%12.8lf n=%12.8lf\n", 
+                l, m, n, alpha, coeff, norm);
     }
 }
 
