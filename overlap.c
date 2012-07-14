@@ -166,10 +166,13 @@ double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_
     Iz = I_xyz(g1.n, -PA->data[2], g2.n, -PB->data[2], gamma, debug);
 
     K = gauss_K(g1.alpha, A, g2.alpha, B);
-    result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
+    //result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
+    // doesn't do normalization
+    result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz;
     if (debug == 1) {
                 printf("--------------------------------------------\n");
-                printf("%15.8lf%15.8lf%15.8lf%15.8lf%15.8lf\n", K, Ix, Iy, Iz, result);
+                printf("%15.8lf%15.8lf%15.8lf%15.8lf%15.8lf\n", 
+                                                        K, Ix, Iy, Iz, result);
     }
     gsl_vector_free(P);
     gsl_vector_free(PA);
@@ -177,7 +180,7 @@ double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_
     return result;
 }
 // 计算两个基函数的重叠积分
-double overlap_basis(const BASIS *b1, const gsl_vector *A, \
+double overlap_basis(const BASIS *b1, const gsl_vector *A,
                       const BASIS *b2, const gsl_vector *B, int debug)
 {
     //int flags = 0; // debug
