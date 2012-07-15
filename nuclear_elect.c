@@ -6,8 +6,7 @@
 #include "common.h"
 #include "ints.h"
 
-double check_nuclear(const GTO* g1, const gsl_vector* A, \
-        const GTO* g2, const gsl_vector* B, const gsl_vector* C);
+double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount);
 
 double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma)
 {
@@ -87,8 +86,8 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_memcpy(PB, P);
     gsl_vector_memcpy(PC, P);
 
-    //norm_pc_2 = pow(gsl_blas_dnrm2(PC), 2);
-    norm_pc_2 = pow(PC->data[0], 2) + pow(PC->data[1], 2) + pow(PC->data[2], 2);
+    norm_pc_2 = pow(gsl_blas_dnrm2(PC), 2);
+    //norm_pc_2 = pow(PC->data[0], 2) + pow(PC->data[1], 2) + pow(PC->data[2], 2);
 
     gsl_vector_sub(PA, A);
     gsl_vector_sub(PB, A);
@@ -108,7 +107,7 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
         for (j = 0; j <= m1 + m2; j++)
             for (k = 0; k <= n1 + n2; k++)
                 // 公式与 (2.17)不一样
-                sum += Axyz[0][i] * Axyz[1][j] * Axyz[2][k] * F_inc_gamma(i+j+k, norm_pc_2/gamma);
+                sum += Axyz[0][i] * Axyz[1][j] * Axyz[2][k] * F_inc_gamma(i+j+k, norm_pc_2*gamma);
     result = 2*M_PI / gamma * K * sum * normlize_coeff_a * normlize_coeff_b;
 
     gsl_vector_free(PA);
@@ -118,6 +117,7 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     return result;
 }
 
+// compute the nuclear-electrics attraction integrals of one basis
 double nuclear_elect_attraction_basis(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount)
 {
     int i, j ,s;
@@ -160,6 +160,8 @@ void nuclear_attraction_matrix(char* file_name)
         for (j = 0; j < basis_count; j++) {
             result = nuclear_elect_attraction_basis(&basisSet[i], &basisSet[j],
                             alist, atomCount);
+            result_check = check_nuclear(&basisSet[i], &basisSet[j],
+                            alist, atomCount);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
@@ -173,46 +175,62 @@ void nuclear_attraction_matrix(char* file_name)
     matrix_output(m_overlap_c, 8, "CHECH NUCLEAR");
 }
 
-double check_nuclear(const GTO* g1, const gsl_vector* A, \
-        const GTO* g2, const gsl_vector* B, const gsl_vector* C)
+double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount)
 {
+    int i, j, s;
+    int gaussCount_1, gaussCount_2;
     double alpha1, alpha2, xa, ya, za, xb, yb, zb, xc, yc, zc, norm1, norm2;
     int l1, m1, n1, l2, m2, n2;
+    gsl_vector *A, *B, *C;
+    GTO *g1, *g2;
     double result = 0;
 
-    l1 = g1->l; m1 = g1->m; n1 = g1->n; alpha1 = g1->alpha; norm1 = g1->norm;
-    l2 = g2->l; m2 = g2->m; n2 = g2->n; alpha2 = g2->alpha; norm2 = g2->norm;
+    gaussCount_1 = b1->gaussCount;
+    gaussCount_2 = b2->gaussCount;
 
-    xa = gsl_vector_get(A, 0);
-    ya = gsl_vector_get(A, 1);
-    za = gsl_vector_get(A, 2);
+    for (i = 0; i < gaussCount_1; i++) {
+        for (j = 0; j < gaussCount_2; j++) {
+            g1 = &b1->gaussian[i];
+            g2 = &b2->gaussian[i];
 
-    xb = gsl_vector_get(B, 0);
-    yb = gsl_vector_get(B, 1);
-    zb = gsl_vector_get(B, 2);
+            A = b1->xyz;
+            B = b2->xyz;
 
-    xc = gsl_vector_get(C, 0);
-    yc = gsl_vector_get(C, 1);
-    zc = gsl_vector_get(C, 2);
+            l1 = g1->l; m1 = g1->m; n1 = g1->n; alpha1 = g1->alpha; norm1 = g1->norm;
+            l2 = g2->l; m2 = g2->m; n2 = g2->n; alpha2 = g2->alpha; norm2 = g2->norm;
 
-    result = nuclear_attraction(xa, ya, za, norm1, l1, m1, n1, alpha1, \
+            xa = gsl_vector_get(A, 0);
+            ya = gsl_vector_get(A, 1);
+            za = gsl_vector_get(A, 2);
+
+            xb = gsl_vector_get(B, 0);
+            yb = gsl_vector_get(B, 1);
+            zb = gsl_vector_get(B, 2);
+
+            for (s = 0; s < atomCount; s++) {
+                C = atomList[i]->coordination;
+
+                xc = gsl_vector_get(C, 0);
+                yc = gsl_vector_get(C, 1);
+                zc = gsl_vector_get(C, 2);
+
+                result = nuclear_attraction(xa, ya, za, norm1, l1, m1, n1, alpha1, \
                                 xb, yb, zb, norm2, l2, m2, n2, alpha2, \
                                 xc, yc, zc);
+            }
+        }
+    }
     return result;
 }
 int main(int argc, char** argv)
 {
     char *basis_base = NULL;
-    /*
+
     if (argc < 2)
-        basis_base = "basis_set";
+        basis_base = "input_file";
     else
         basis_base = argv[1];
-    printf("---------Read data from \"%s\"--------------------\n", basis_base);
-    overlap_1(basis_base);
-    */
-    basis_base = "input_file";
-    printf("---------Read data from \"%s\"--------------------\n", basis_base);
+
     nuclear_attraction_matrix(basis_base);
     return 0;
 }
