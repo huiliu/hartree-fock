@@ -134,14 +134,14 @@ void overlap_2(char* file_name)
     BASIS *basisSet;
     double result, result_check = 0;
 
-    gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
-    gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
-
     INPUT_INFO *b = parse_input(file_name);    
 
     //ATOM_INFO **alist = b->atomList;
     basis_count = b->basisCount;
     basisSet = b->basisSet;
+    gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count,basis_count);
+    gsl_matrix *m_overlap_c = gsl_matrix_calloc(basis_count,basis_count);
+
     //atom_output((const ATOM_INFO **)alist, b->atomCount);
     //basis_set_output(b->basisSet, b->basisCount, "BASIS");
 
@@ -160,8 +160,8 @@ void overlap_2(char* file_name)
         }
     }
 
-    matrix_output(m_overlap, 8, "OVERLAP INTEGRALS:");
-    matrix_output(m_overlap_c, 8, "CHECK OVERLAP INTEGRALS:");
+    matrix_output(m_overlap, basis_count, "OVERLAP INTEGRALS:");
+    matrix_output(m_overlap_c, basis_count, "CHECK OVERLAP INTEGRALS:");
 }
 
 double check_overlap(const BASIS *b1, const BASIS *b2, int debug)
