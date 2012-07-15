@@ -5,12 +5,22 @@
 #include "overlap.h"
 #include "ints.h"
 
+int gtoIsNeg(const GTO* g)
+{
+    if (g->l < 0 || g->m < 0 || g->n < 0)
+        return 1;
+    else
+        return 0;
+}
+
 double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, 
                      const GTO* g2, gsl_vector* B, int flags, int debug)
 {
+// 徐光宪 《量子化学》 中册 P66 formula (10.7.6)
     double kinetic_xyz = 0;
     double b = g2->alpha;
     double l2 = 0;
+
     GTO g2_1 = *g2;
     GTO g2_2 = *g2;
 
@@ -29,8 +39,61 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A,
     }
 
     kinetic_xyz += b * (2*l2 + 1) * overlap_gauss(*g1, A, *g2, B, debug);
-    kinetic_xyz -= 2 * pow(b, 2) * overlap_gauss(*g1, A, g2_2, B, debug);
-    kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gauss(*g1, A, g2_1, B, debug);
+    if(!(gtoIsNeg(&g2_2)))  // 貌似没有作用
+        kinetic_xyz -= 2 * pow(b, 2) * overlap_gauss(*g1, A, g2_2, B, debug);
+    if(!(gtoIsNeg(&g2_1)))
+        kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gauss(*g1, A, g2_1, B, debug);
+
+    return kinetic_xyz;
+}
+
+// equivalent function kinetic_xyz
+double kinetic_I_xyz_c(const GTO* g1, const gsl_vector* A, 
+                     const GTO* g2, gsl_vector* B, int flags, int debug)
+{
+/* Justin T. Fermann and Edward F. Valeev; 
+    Fundamentals of Molecular Integrals Evaluation
+    formula (4.13)
+ */
+    double kinetic_xyz = 0;
+    int l1, l2;
+    double alpha1, alpha2;
+
+    alpha1 = g1->alpha; 
+    alpha2 = g2->alpha; 
+    
+    GTO g1_1 = *g1;
+    GTO g1_2 = *g1;
+    GTO g2_1 = *g2;
+    GTO g2_2 = *g2;
+
+    if (flags == 0) { // 求Px
+        l1 = g1->l; l2 = g2->l;
+        g1_1.l--; g1_2.l++;
+        g2_1.l--; g2_2.l++;
+    }else if (flags == 1) { // 求Px
+    l1 = g1->m; l2 = g2->m;
+        g1_1.m--; g1_2.m++;
+        g2_1.m--; g2_2.m++;
+    }else if (flags == 2) { // 求Px
+    l1 = g1->n; l2 = g2->n;
+        g1_1.n--; g1_2.n++;
+        g2_1.n--; g2_2.n++;
+    }
+
+        kinetic_xyz += 0.5 * l1 * l2 * overlap_gauss(g1_1, A, g2_1, B, debug);
+        kinetic_xyz += 2 * alpha1 * alpha2 * overlap_gauss(g1_2, A, g2_2, B, debug);
+        kinetic_xyz -= alpha1 * l2 * overlap_gauss(g1_2, A, g2_1, B, debug);
+        kinetic_xyz -= alpha2 * l1 * overlap_gauss(g1_1, A, g2_2, B, debug);
+
+    if (debug == 1) {
+        printf("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~   ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~\n");  
+        gto_output(&g1_1, 1, "g1_1:");
+        gto_output(&g1_2, 1, "g1_2:");
+        gto_output(&g2_1, 1, "g2_1:");
+        gto_output(&g2_2, 1, "g2_2:");
+        printf("          kinetic_xyz = %lf\n", kinetic_xyz);
+    }
 
     return kinetic_xyz;
 }
@@ -39,10 +102,20 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A,
 double kinetic_gto(const GTO *g1, const gsl_vector* A, 
                    const GTO* g2, gsl_vector* B, int debug)
 {
+//  徐光宪 《量子化学》 中册 P66 formula (10.7.4)
     double kinetic_I_x= 0;
     double kinetic_I_y= 0;
     double kinetic_I_z= 0;
     double result = 0;
+
+    if (debug == 2) {
+        printf("^^^^^^^ ^^^^^^^^ ^^^^^^^^ ^^^^^^^^^^^ ^^^^^^^^\n");
+        vector_output(A, 3, "第一个原子坐标:");
+        gto_output(g1, 1, "基函数:");
+        vector_output(B, 3, "第二个原子坐标:");
+        gto_output(g2, 1, "基函数:");
+        printf("Ix%15.9lf%15.9lf%15.9lf\n", kinetic_I_x, kinetic_I_y, kinetic_I_z);
+    }
 
     kinetic_I_x = kinetic_I_xyz(g1, A, g2, B, 0, debug);
     kinetic_I_y = kinetic_I_xyz(g1, A, g2, B, 1, debug);
@@ -93,7 +166,6 @@ double check_kinetic(const BASIS* b1, const BASIS* b2, int debug)
         }
     }
     return result;
-
 }
 
 // compute the kinetic integral between basis b1 and b2
@@ -135,8 +207,9 @@ void kinetic_Int_Matrix(const char* file_name)
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
+            debug = 0;
             result = kinetic_basis(&basisSet[i], &basisSet[j], debug);
-            result_check = check_kinetic(&basisSet[i], &basisSet[j], debug);
+            result_check = check_kinetic(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
@@ -152,8 +225,13 @@ void kinetic_Int_Matrix(const char* file_name)
 
 int main(int argc, char** argv)
 {
-    char* file_name = "input_file";
+    char *basis_base = NULL;
 
-    kinetic_Int_Matrix(file_name);
+    if (argc < 2)
+        basis_base = "input_file";
+    else
+        basis_base = argv[1];
+
+    kinetic_Int_Matrix(basis_base);
     return 0;
 }
