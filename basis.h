@@ -2,6 +2,10 @@
 
 #ifndef __INTEGRAL__BASIS__
 #define __INTEGRAL__BASIS__
+
+// angstrom to bohr radius
+#define ANGS_2_BOHR     1.88971616463
+
 typedef struct gto {
     int l, m, n;
     double alpha;

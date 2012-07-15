@@ -141,7 +141,7 @@ void gto_output(const GTO* g, int count, char* msg)
         alpha = (g+i)->alpha;
         coeff = (g+i)->coeff;
         norm = (g+i)->norm;
-        printf("l=%d m=%d n=%d a=%12.8lf c=%12.8lf n=%12.8lf\n", 
+        printf("%d %d %d %12.8lf %12.8lf %12.8lf\n",
                 l, m, n, alpha, coeff, norm);
     }
 }
@@ -171,13 +171,12 @@ INPUT_INFO* parse_input(const char* file_name)
 // parse the input file, translate the input file into useable data
     FILE *f;
     INPUT_INFO *input_information;
-    int Atom_index = 0;
-    int j;
     char Item[Item_count][8] = {"$COORD", "$BASIS", "$END"};
     char BasisSetName[Basis_set_count_max][8] = {"STO-3G", "6-31G"};
-    ATOM_INFO *atom; // save the coordination of atoms
-    int state = 0, i;
     char input_item[9];
+    ATOM_INFO *atom; // save the coordination of atoms
+    int state = 0, i, j, Atom_index = 0;
+    double tmp_coord = 0.0;
     input_information = malloc(sizeof(INPUT_INFO));
     input_information->gXYZ = (gsl_vector**)malloc(sizeof(gsl_vector*));
 
@@ -219,9 +218,12 @@ INPUT_INFO* parse_input(const char* file_name)
                 strcpy(atom->symbol, input_item);
                 // read element core electronics of atom
                 fscanf(f, "%d", &atom->n);
-                for (i = 0; i < 3; i++)
+                for (i = 0; i < 3; i++) {
                     // read coordination of atom
-                    fscanf(f, "%lf", atom->coordination->data + i);
+                    fscanf(f, "%lf", &tmp_coord);
+                    gsl_vector_set(atom->coordination, i,
+                                                       tmp_coord * ANGS_2_BOHR);
+                }
 
                 Atom_index++;
                 break;
@@ -360,13 +362,17 @@ BASIS* readbasis(FILE * f, int basisCount)
 
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_1;
-                    basis[basis_i].gaussian[i].norm = 
+                    basis[basis_i].gaussian[i].norm =
                                 normalize_coeff(&basis[basis_i].gaussian[i]);
 //#define DEBUG_OUTPUT_BASIS_SET
 #ifdef DEBUG_OUTPUT_BASIS_SET
-                    printf("%20.10lf%20.10lf\n", 
-                    basis[basis_i].gaussian[i].alpha, 
-                    basis[basis_i].gaussian[i].coeff);
+                    printf("%d %d %d %10.6lf%10.6lf%10.6lf\n",
+                            basis[basis_i].gaussian[i].l,
+                            basis[basis_i].gaussian[i].m,
+                            basis[basis_i].gaussian[i].n,
+                            basis[basis_i].gaussian[i].alpha,
+                            basis[basis_i].gaussian[i].coeff,
+                            basis[basis_i].gaussian[i].norm);
 #endif
 
                 }
