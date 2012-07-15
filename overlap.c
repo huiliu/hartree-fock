@@ -16,7 +16,6 @@ int factorial(int n)
 
     for (i = 1; i <= n; i++)
         result *= i;
-
     return result;
 }
 
@@ -24,46 +23,52 @@ int factorial_2(int n)
 {
     int i, result = 1;
 
-    if (n <= 1) return 1;
-
-    for (i = 1; i <= n; i += 2)
-        result *= i;
-
+    if (n % 2 == 0) {
+        if (n <= 2) return 2;
+        for (i = 2; i <= n; i += 2)
+            result *= i;
+    }else{
+        if (n <= 1) return 1;
+        for (i = 1; i <= n; i += 2)
+            result *= i;
+    }
     return result;
 }
 
 double fact_l_lambda(int l, int lambda)
 {
     // 量子化学中册 P62 (10.6.5)
-    return (double)factorial(l) / factorial(lambda) / factorial(l - lambda);
+    return (double)factorial(l) / (factorial(lambda) * factorial(l - lambda));
 }
 
 double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags)
 {
-// 《量子化学》中册P63第一个公式
-    int i;
+// 《量子化学》中册 P63 第一个公式
+    int i, j;
     double sum = 0;
 
     for (i = 0; i <= l1; i++) {
-        if (ii - l1 <= i && i <= l2) {
-            sum += (fact_l_lambda(l1, ii - i) * fact_l_lambda(l2, i) * \
-                                pow(pax, l1 -ii+ i) * pow(pbx, l2 - i));
+        for (j = 0; j <= l2; j++) {
+            if (i + j == ii) {
+                sum += (fact_l_lambda(l1, i) * fact_l_lambda(l2, j) * \
+                                    pow(pax, l1 - i) * pow(pbx, l2 - j));
+            }
         }
     }
     return  sum;
 }
 
-double I_xyz(int l, double pax, int ll, double pbx, double gamma, int flags)
+double I_xyz(int l1, double pax, int l2, double pbx, double gamma, int flags)
 {
 // 《量子化学》中册 P63 (10.6.8) (10.6.9) (10.6.10)
     int i;
     double sum = 0;
 
-    for (i = 0; i <= (l + ll) / 2; i++) {
+    for (i = 0; i <= (l1 + l2) / 2; i++) {
         if (flags == 1)
-            printf("l = %dll = %dfi = %lf\n",l,ll, fi_l_ll_pax_pbx(2*i, l, ll, pax, pbx, flags));
-        sum += fi_l_ll_pax_pbx(2*i, l, ll, pax, pbx, flags) * \
-                        factorial_2(2i - 1) / pow(2 * gamma, i);
+            printf("i = %d l1 = %d l2 = %d fi = %lf\n",i,l1,l2, fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags));
+        sum += factorial_2(2i - 1) / pow(2 * gamma, i) * sqrt(M_PI / gamma) * \
+                fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags);
     }
     return sum;
 }
@@ -103,12 +108,12 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
     gsl_vector *center = gsl_vector_alloc(3);
     
     for (i = 0; i < 3; i++) {
-        x1 = gsl_vector_get(A, i);
-        x2 = gsl_vector_get(B, i);
-        tmp = (a * x1 +  b*x2) / gamma;
-        gsl_vector_set(center, i, tmp);
+        //x1 = gsl_vector_get(A, i);
+        //x2 = gsl_vector_get(B, i);
+        //tmp = (a * x1 +  b*x2) / gamma;
+        //gsl_vector_set(center, i, tmp);
     // 与上面看似等同，但是计算的S与P轨道相互作用不一样
-    //    center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
+        center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
     }
 
     // DEBUG
@@ -166,12 +171,18 @@ double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_
     Iz = I_xyz(g1.n, -PA->data[2], g2.n, -PB->data[2], gamma, debug);
 
     K = gauss_K(g1.alpha, A, g2.alpha, B);
+
     //result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
+    result += K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
     // doesn't do normalization
-    result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz;
-    if (debug == 1) {
+    // result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz;
+    if (debug == 2) {
                 printf("--------------------------------------------\n");
-                printf("%15.8lf%15.8lf%15.8lf%15.8lf%15.8lf\n", 
+                vector_output(PA, 3, "PA:");
+                vector_output(PB, 3, "PB:");
+                gto_output(&g1, 1, "g1:");
+                gto_output(&g2, 1, "g2:");
+                printf("%14.8lf%14.8lf%14.8lf%14.8lf%14.8lf\n", 
                                                         K, Ix, Iy, Iz, result);
     }
     gsl_vector_free(P);
