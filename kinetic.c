@@ -195,15 +195,15 @@ void kinetic_Int_Matrix(const char* file_name)
     BASIS *basisSet;
     double result, result_check = 0;
 
-    gsl_matrix *m_overlap = gsl_matrix_calloc(8,8);
-    gsl_matrix *m_overlap_c = gsl_matrix_calloc(8,8);
-
     INPUT_INFO *b = parse_input(file_name);    
 
     //ATOM_INFO **alist = b->atomList;
     basis_count = b->basisCount;
     basisSet = b->basisSet;
     atomCount = b->atomCount;
+
+    gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count, basis_count);
+    gsl_matrix *m_overlap_c = gsl_matrix_calloc(basis_count, basis_count);
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
@@ -219,8 +219,8 @@ void kinetic_Int_Matrix(const char* file_name)
             gsl_matrix_set(m_overlap_c, i, j, result_check);
         }
     }
-    matrix_output(m_overlap, 8, "NUCLEAR");
-    matrix_output(m_overlap_c, 8, "CHECH NUCLEAR");
+    matrix_output(m_overlap, basis_count, "KINETIC");
+    matrix_output(m_overlap_c, basis_count, "CHECH KINETIC");
 }
 
 int main(int argc, char** argv)
