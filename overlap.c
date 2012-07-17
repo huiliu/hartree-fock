@@ -67,7 +67,7 @@ double I_xyz(int l1, double pax, int l2, double pbx, double gamma, int flags)
     for (i = 0; i <= (l1 + l2) / 2; i++) {
         if (flags == 1)
             printf("i = %d l1 = %d l2 = %d fi = %lf\n",i,l1,l2, fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags));
-        sum += factorial_2(2i - 1) / pow(2 * gamma, i) * sqrt(M_PI / gamma) * \
+        sum += factorial_2(2i - 1) / pow(2 * gamma, i) * \
                 fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags);
     }
     return sum;
@@ -103,7 +103,7 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
 // 关于此部分不甚明白
     int i;
     double gamma = a + b;
-    double x1, x2, tmp;
+    //double x1, x2, tmp;
 
     gsl_vector *center = gsl_vector_alloc(3);
     
@@ -172,10 +172,9 @@ double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_
 
     K = gauss_K(g1.alpha, A, g2.alpha, B);
 
-    //result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
-    result += K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
+    result = pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
     // doesn't do normalization
-    // result += pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz;
+    //result = pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * coeff1 * coeff2;
     if (debug == 2) {
                 printf("--------------------------------------------\n");
                 vector_output(PA, 3, "PA:");
