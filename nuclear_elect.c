@@ -84,8 +84,8 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_memcpy(PC, P);
 
     gsl_vector_sub(PA, A);
-    gsl_vector_sub(PB, A);
-    gsl_vector_sub(PC, A);
+    gsl_vector_sub(PB, B);
+    gsl_vector_sub(PC, C);
 
     norm_pc_2 = pow(gsl_blas_dnrm2(PC), 2);
 
