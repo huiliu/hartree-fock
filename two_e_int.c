@@ -74,7 +74,7 @@ double electron_repulsion_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector *PA, *PB, *QC, *QD, *P, *Q, *PQ, *AB, *CD;
     double Bx[10], By[10], Bz[10];
     double alpha1, alpha2, alpha3, alpha4, gamma1, gamma2;
-    double norm_pq_2, norm_ab, norm_cd, delta;
+    double norm_pq_2, norm_ab, norm_cd, finc;
     double result = 0;
 
     alpha1 = g1->alpha;
@@ -113,7 +113,7 @@ double electron_repulsion_gto(const GTO* g1, const gsl_vector* A,
     norm_ab = gsl_blas_dnrm2(AB);
     norm_cd = gsl_blas_dnrm2(CD);
 
-    delta = 0.25 / (1/gamma1 + 1/gamma2);
+    finc = norm_pq_2 * gamma1 * gamma2/(gamma1 + gamma2);
 
     for (i = 0; i < 10; i++)
         Bx[i] = By[i] = Bz[i] = 0;
@@ -140,8 +140,7 @@ double electron_repulsion_gto(const GTO* g1, const gsl_vector* A,
     for (i = 0; i <= L; i++)
         for (j = 0; j <= M; j++)
             for (k = 0; k <= N; k++)
-                result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, 
-                                                           norm_pq_2/(4*delta));
+                result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, finc);
 
     result *= omega(alpha1, alpha2, alpha3, alpha4, norm_ab, norm_cd) \
                 * g1->norm * g2->norm * g3->norm * g4->norm \
