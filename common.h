@@ -7,4 +7,7 @@
 void matrix_output(const gsl_matrix *, int , char *);
 // 以更好的格式输出向量
 void vector_output(const gsl_vector *, int , char *);
+double F_inc_gamma(int m ,double w);
+int factorial(int);
+int factorial_2(int);
 #endif
