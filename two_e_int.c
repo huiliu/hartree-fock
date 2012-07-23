@@ -42,13 +42,12 @@ double omega(double alpha1, double alpha2, double alpha3, double alpha4,
                                         -alpha3*alpha4 * pow(CD, 2) / gamma2);
 }
 
-double* Bxyz(int l1, int l2, double PA, double PB, double gamma1, 
-             int l3, int l4, double QC, double QD, double gamma2, double px)
+void Bxyz(int l1, int l2, double PA, double PB, double gamma1, 
+          int l3, int l4, double QC, double QD, double gamma2,
+          double px, double* result)
 {
     int l, r, i, ll, rr, I;
-    double* result;
 
-    result = malloc(sizeof(double)*(l1+l2+l3+l4+1));
 
     for (l = 0; l <= l1+l2; l++) {
         for (r = 0; r <= l/2; r++) {
@@ -63,8 +62,6 @@ double* Bxyz(int l1, int l2, double PA, double PB, double gamma1,
             }
         }
     }
-
-    return result;
 }
 
 double electron_repulsion_gto(const GTO* g1, const gsl_vector* A, 
@@ -75,7 +72,7 @@ double electron_repulsion_gto(const GTO* g1, const gsl_vector* A,
     int i, j, k;
     int L, M, N;
     gsl_vector *PA, *PB, *QC, *QD, *P, *Q, *PQ, *AB, *CD;
-    double *Bx, *By, *Bz;
+    double Bx[10], By[10], Bz[10];
     double alpha1, alpha2, alpha3, alpha4, gamma1, gamma2;
     double norm_pq_2, norm_ab, norm_cd, delta;
     double result = 0;
@@ -117,13 +114,20 @@ double electron_repulsion_gto(const GTO* g1, const gsl_vector* A,
     norm_cd = gsl_blas_dnrm2(CD);
 
     delta = 0.25 / (1/gamma1 + 1/gamma2);
+
+    for (i = 0; i < 10; i++)
+        Bx[i] = By[i] = Bz[i] = 0;
+
+    //Bx = malloc(sizeof(double) * (g1->l+g2->l+g3->l+g4->l));
+    //By = malloc(sizeof(double) * (g1->m+g2->m+g3->m+g4->m));
+    //Bz = malloc(sizeof(double) * (g1->n+g2->n+g3->n+g4->n));
     
-    Bx = Bxyz(g1->l, g2->l, PA->data[0], PB->data[0], gamma1, \
-              g3->l, g4->l, QC->data[0], QD->data[0], gamma2, PQ->data[0]);
-    By = Bxyz(g1->m, g2->m, PA->data[1], PB->data[1], gamma1, \
-              g3->m, g4->m, QC->data[1], QD->data[1], gamma2, PQ->data[1]);
-    Bz = Bxyz(g1->n, g2->n, PA->data[2], PB->data[2], gamma1, \
-              g3->n, g4->n, QC->data[2], QD->data[2], gamma2, PQ->data[2]);
+    Bxyz(g1->l, g2->l, PA->data[0], PB->data[0], gamma1, \
+         g3->l, g4->l, QC->data[0], QD->data[0], gamma2, PQ->data[0], Bx);
+    Bxyz(g1->m, g2->m, PA->data[1], PB->data[1], gamma1, \
+         g3->m, g4->m, QC->data[1], QD->data[1], gamma2, PQ->data[1], By);
+    Bxyz(g1->n, g2->n, PA->data[2], PB->data[2], gamma1, \
+         g3->n, g4->n, QC->data[2], QD->data[2], gamma2, PQ->data[2], Bz);
 
     gsl_vector_free(PA);
     gsl_vector_free(PB);
@@ -139,11 +143,13 @@ double electron_repulsion_gto(const GTO* g1, const gsl_vector* A,
                 result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, 
                                                            norm_pq_2/(4*delta));
 
-    result *= omega(alpha1, alpha2, alpha3, alpha4, norm_ab, norm_cd);
+    result *= omega(alpha1, alpha2, alpha3, alpha4, norm_ab, norm_cd) \
+                * g1->norm * g2->norm * g3->norm * g4->norm \
+                * g1->coeff * g2->coeff * g3->coeff * g4->coeff;
 
-    free(Bx);
-    free(By);
-    free(Bz);
+    //free(Bx);
+    //free(By);
+    //free(Bz);
 
     return result;
 }
