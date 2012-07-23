@@ -5,8 +5,8 @@
 #include "overlap.h"
 #include "common.h"
 #include "ints.h"
+#include "nuclear_elect.h"
 
-double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount);
 
 double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int debug)
 {
@@ -132,22 +132,23 @@ if (debug == 2)
 
     return result;
 }
-void nuclear_attraction_matrix(char* file_name)
+
+gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b)
 {
     int debug = 0;
     int i, j, basis_count, atomCount;
     BASIS *basisSet;
-    double result = 0, result_check = 0;
+    double result = 0;
 
-    INPUT_INFO *b = parse_input(file_name);    
+    //INPUT_INFO *b = parse_input(file_name);    
 
     ATOM_INFO **alist = b->atomList;
     basis_count = b->basisCount;
     basisSet = b->basisSet;
     atomCount = b->atomCount;
 
-    gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count, basis_count);
-    gsl_matrix *m_overlap_c = gsl_matrix_calloc(basis_count, basis_count);
+    gsl_matrix *m_attraction = gsl_matrix_calloc(basis_count, basis_count);
+    //gsl_matrix *m_overlap_c = gsl_matrix_calloc(basis_count, basis_count);
 
     //atom_output((const ATOM_INFO **)alist, b->atomCount);
     //basis_set_output(b->basisSet, b->basisCount, "BASIS");
@@ -161,19 +162,19 @@ void nuclear_attraction_matrix(char* file_name)
             */
             result = nuclear_elect_attraction_basis(&basisSet[i], &basisSet[j],
                             alist, atomCount, debug);
-            result_check = check_nuclear(&basisSet[i], &basisSet[j],
-                            alist, atomCount);
+            //result_check = check_nuclear(&basisSet[i], &basisSet[j],
+            //                alist, atomCount);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
-                result_check = 0;
             }
-            gsl_matrix_set(m_overlap, i, j, result);
-            gsl_matrix_set(m_overlap_c, i, j, result_check);
+            gsl_matrix_set(m_attraction, i, j, result);
+            //gsl_matrix_set(m_overlap_c, i, j, result_check);
         }
     }
-    matrix_output(m_overlap, basis_count, "NUCLEAR");
-    matrix_output(m_overlap_c, basis_count, "CHECH NUCLEAR");
+    //matrix_output(m_overlap, basis_count, "NUCLEAR");
+    //matrix_output(m_overlap_c, basis_count, "CHECH NUCLEAR");
+    return m_attraction;
 }
 
 double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount)
@@ -223,55 +224,3 @@ double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int
     }
     return result;
 }
-int main(int argc, char** argv)
-{
-    char *basis_base = NULL;
-
-    if (argc < 2)
-        basis_base = "input_file";
-    else
-        basis_base = argv[1];
-
-    nuclear_attraction_matrix(basis_base);
-    return 0;
-}
-/*
-$COORD
-N   7   0.30926 0.30926 0.30926
-H   1   2.175   0.0     0.0
-H   1   0.0     2.175   0.0
-H   1   0.0     0.0     2.175
-$END
-$BASIS
-STO-3G
-****
-N   0
-S   3   1.00
-     0.9910616896E+02  0.1543289673E+00
-     0.1805231239E+02  0.5353281423E+00
-     0.4885660238E+01  0.4446345422E+00
-SP   3   1.00
-     0.3780455879E+01 -0.9996722919E-01  0.1559162750E+00
-     0.8784966449E+00  0.3995128261E+00  0.6076837186E+00
-     0.2857143744E+00  0.7001154689E+00  0.3919573931E+00
-****
-H    0
-S   3   1.00
-     0.3425250914E+01  0.1543289673E+00
-     0.6239137298E+00  0.5353281423E+00
-     0.1688554040E+00  0.4446345422E+00
-****
-H   0
-S   3   1.00
-     0.3425250914E+01  0.1543289673E+00
-     0.6239137298E+00  0.5353281423E+00
-     0.1688554040E+00  0.4446345422E+00
-****
-H   0
-S   3   1.00
-     0.3425250914E+01  0.1543289673E+00
-     0.6239137298E+00  0.5353281423E+00
-     0.1688554040E+00  0.4446345422E+00
-****
-$END
-*/
