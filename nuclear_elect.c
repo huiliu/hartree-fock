@@ -34,28 +34,6 @@ double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int
     return A;
 }
 
-#define F_INC_GAMMA_CYCLE    100
-#define F_INC_GAMMA_delta  1.0E-12
-double F_inc_gamma(int m ,double w)
-{
-    double result = 0;
-    double tmp = 0;
-    int i;
-    
-    if (w < 17) {
-        result = tmp = 1.0 / factorial_2(2*m + 1);
-        for (i = 1; i < F_INC_GAMMA_CYCLE; i++) {
-            tmp *= ((2*w) / (2*m + 2*i + 1));
-            if ((tmp - F_INC_GAMMA_delta) < 0)
-                break;
-            result += tmp;
-        }
-        return result * factorial_2(2 * m -1) * exp(-w);;
-    }else
-        result = factorial_2(2*m -1) / pow(2*w, m + 0.5) * sqrt(M_PI_2);
-    return result;
-}
-
 double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
         const GTO* g2, const gsl_vector* B, const gsl_vector* C, int debug)
 {
@@ -176,9 +154,11 @@ void nuclear_attraction_matrix(char* file_name)
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
+            /*
             debug = 0;
             if ( (i == j) && j == 3)
                 debug = 2;
+            */
             result = nuclear_elect_attraction_basis(&basisSet[i], &basisSet[j],
                             alist, atomCount, debug);
             result_check = check_nuclear(&basisSet[i], &basisSet[j],
