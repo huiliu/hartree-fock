@@ -3,6 +3,7 @@
 #include <math.h>
 #include "common.h"
 #include "overlap.h"
+#include "kinetic.h"
 #include "ints.h"
 
 int gtoIsNeg(const GTO* g)
@@ -38,11 +39,11 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A,
         g2_2.n += 2;
     }
 
-    kinetic_xyz += b * (2*l2 + 1) * overlap_gauss(*g1, A, *g2, B, debug);
+    kinetic_xyz += b * (2*l2 + 1) * overlap_gto(g1, A, g2, B, debug);
     if(!(gtoIsNeg(&g2_2)))  // 貌似没有作用
-        kinetic_xyz -= 2 * pow(b, 2) * overlap_gauss(*g1, A, g2_2, B, debug);
+        kinetic_xyz -= 2 * pow(b, 2) * overlap_gto(g1, A, &g2_2, B, debug);
     if(!(gtoIsNeg(&g2_1)))
-        kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gauss(*g1, A, g2_1, B, debug);
+        kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gto(g1, A, &g2_1, B, debug);
 
     return kinetic_xyz;
 }
@@ -81,10 +82,10 @@ double kinetic_I_xyz_c(const GTO* g1, const gsl_vector* A,
         g2_1.n--; g2_2.n++;
     }
 
-        kinetic_xyz += 0.5 * l1 * l2 * overlap_gauss(g1_1, A, g2_1, B, debug);
-        kinetic_xyz += 2 * alpha1 * alpha2 * overlap_gauss(g1_2, A, g2_2, B, debug);
-        kinetic_xyz -= alpha1 * l2 * overlap_gauss(g1_2, A, g2_1, B, debug);
-        kinetic_xyz -= alpha2 * l1 * overlap_gauss(g1_1, A, g2_2, B, debug);
+        kinetic_xyz += 0.5 * l1 * l2 * overlap_gto(&g1_1, A, &g2_1, B, debug);
+        kinetic_xyz += 2 * alpha1 * alpha2 * overlap_gto(&g1_2, A, &g2_2, B, debug);
+        kinetic_xyz -= alpha1 * l2 * overlap_gto(&g1_2, A, &g2_1, B, debug);
+        kinetic_xyz -= alpha2 * l1 * overlap_gto(&g1_1, A, &g2_2, B, debug);
 
     if (debug == 1) {
         printf("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~   ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~\n");  
@@ -188,50 +189,34 @@ double kinetic_basis(const BASIS* b1, const BASIS* b2, int debug)
     return result;
 }
 
-void kinetic_Int_Matrix(const char* file_name)
+gsl_matrix* kinetic_matrix(INPUT_INFO* b)
 {
     int debug = 0;
     int i, j, basis_count, atomCount;
     BASIS *basisSet;
-    double result, result_check = 0;
+    double result = 0;
 
-    INPUT_INFO *b = parse_input(file_name);    
+    //INPUT_INFO *b = parse_input(file_name);    
 
     //ATOM_INFO **alist = b->atomList;
     basis_count = b->basisCount;
     basisSet = b->basisSet;
     atomCount = b->atomCount;
 
-    gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count, basis_count);
-    gsl_matrix *m_overlap_c = gsl_matrix_calloc(basis_count, basis_count);
+    gsl_matrix *m_kinetic = gsl_matrix_calloc(basis_count, basis_count);
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
             debug = 0;
             result = kinetic_basis(&basisSet[i], &basisSet[j], debug);
-            result_check = check_kinetic(&basisSet[i], &basisSet[j], 0);
+            //result_check = check_kinetic(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
-                result_check = 0;
             }
-            gsl_matrix_set(m_overlap, i, j, result);
-            gsl_matrix_set(m_overlap_c, i, j, result_check);
+            gsl_matrix_set(m_kinetic, i, j, result);
         }
     }
-    matrix_output(m_overlap, basis_count, "KINETIC");
-    matrix_output(m_overlap_c, basis_count, "CHECH KINETIC");
-}
-
-int main(int argc, char** argv)
-{
-    char *basis_base = NULL;
-
-    if (argc < 2)
-        basis_base = "input_file";
-    else
-        basis_base = argv[1];
-
-    kinetic_Int_Matrix(basis_base);
-    return 0;
+    //matrix_output(m_kinetic, basis_count, "KINETIC");
+    return m_kinetic;
 }
