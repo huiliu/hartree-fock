@@ -76,16 +76,10 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
 
     gsl_vector *center = gsl_vector_alloc(3);
     
-    for (i = 0; i < 3; i++) {
-        //x1 = gsl_vector_get(A, i);
-        //x2 = gsl_vector_get(B, i);
-        //tmp = (a * x1 +  b*x2) / gamma;
-        //gsl_vector_set(center, i, tmp);
-    // 与上面看似等同，但是计算的S与P轨道相互作用不一样
+    for (i = 0; i < 3; i++)
         center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
-    }
 
-    // DEBUG
+    // FOR DEBUG
     if (flags == 1) {
         gsl_vector * test = gsl_vector_alloc(3);
         gsl_vector * test2 = gsl_vector_alloc(3);
@@ -109,7 +103,7 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
     return center;
 }
 
-double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_vector* B, int debug)
+double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_vector* B, int debug)
 {
     double K, gamma, Ix, Iy, Iz, result = 0;
     double normal1, normal2;
@@ -119,27 +113,26 @@ double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_
     PA = gsl_vector_alloc(3);
     PB = gsl_vector_alloc(3);
 
-    normal1 = g1.norm;
-    normal2 = g2.norm;
-    coeff1 = g1.coeff;
-    coeff2 = g2.coeff;
+    normal1 = g1->norm;
+    normal2 = g2->norm;
+    coeff1 = g1->coeff;
+    coeff2 = g2->coeff;
 
     // compute the coordination of P. 《量子化学》中册, P77
-    P = gaussian_product_center(g1.alpha, A, g2.alpha, B, debug);
-    gsl_vector_memcpy(PA, A);
-    gsl_vector_memcpy(PB, B);
+    P = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
+    gsl_vector_memcpy(PA, P);
+    gsl_vector_memcpy(PB, P);
 
-    gsl_vector_sub(PA, P);
-    gsl_vector_sub(PB, P);
+    gsl_vector_sub(PA, A);
+    gsl_vector_sub(PB, B);
 
-    gamma = g1.alpha + g2.alpha;
+    gamma = g1->alpha + g2->alpha;
 
+    Ix = I_xyz(g1->l, PA->data[0], g2->l, PB->data[0], gamma, debug);
+    Iy = I_xyz(g1->m, PA->data[1], g2->m, PB->data[1], gamma, debug);
+    Iz = I_xyz(g1->n, PA->data[2], g2->n, PB->data[2], gamma, debug);
 
-    Ix = I_xyz(g1.l, -PA->data[0], g2.l, -PB->data[0], gamma, debug);
-    Iy = I_xyz(g1.m, -PA->data[1], g2.m, -PB->data[1], gamma, debug);
-    Iz = I_xyz(g1.n, -PA->data[2], g2.n, -PB->data[2], gamma, debug);
-
-    K = gauss_K(g1.alpha, A, g2.alpha, B);
+    K = gauss_K(g1->alpha, A, g2->alpha, B);
 
     result = pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
     // doesn't do normalization
@@ -148,8 +141,8 @@ double overlap_gauss(const GTO g1, const gsl_vector* A, const GTO g2, const gsl_
                 printf("--------------------------------------------\n");
                 vector_output(PA, 3, "PA:");
                 vector_output(PB, 3, "PB:");
-                gto_output(&g1, 1, "g1:");
-                gto_output(&g2, 1, "g2:");
+                gto_output(g1, 1, "g1:");
+                gto_output(g2, 1, "g2:");
                 printf("%14.8lf%14.8lf%14.8lf%14.8lf%14.8lf\n", 
                                                         K, Ix, Iy, Iz, result);
     }
@@ -172,137 +165,41 @@ double overlap_basis(const BASIS *b1, const gsl_vector *A,
         for (j = 0; j < b2->gaussCount; j++) {
             g1 = b1->gaussian[i];
             g2 = b2->gaussian[j];
-            result += overlap_gauss(g1, A, g2, B, debug);
+            result += overlap_gto(&g1, A, &g2, B, debug);
         }
     }
     return result;
 }
-/*
-int main(int argc, char** argv)
+
+gsl_matrix* overlap_matrix(INPUT_INFO* b)
 {
-    char *basis_base = NULL;
-    if (argc < 2)
-        basis_base = "basis_set";
-    else
-        basis_base = argv[1];
+    int i, j, basis_count;
+    BASIS *basisSet;
+    double result = 0;
 
-    BASIS *b = read_basis(basis_base);    
+    //INPUT_INFO *b = parse_input(file_name);    
 
-    double result = 0, tmp;
-    int i, j, u, v;
-    int basis_count = 8;
-    // 重叠积分不位置有关，基组处于各自的中心，
-    // 通过记录每个原子所包含的基函数数目来判断某个基函数处于哪里
-    int atom_1_basis_num, atom_2_basis_num;
-    gsl_matrix *m_overlap = gsl_matrix_alloc(basis_count, basis_count);
-    gsl_vector H[2];
-    gsl_vector *N = gsl_vector_calloc(3);
-    gsl_vector *h1 = gsl_vector_calloc(3);
-    gsl_vector *h2 = gsl_vector_calloc(3);
-    gsl_vector *h3 = gsl_vector_calloc(3);
+    //ATOM_INFO **alist = b->atomList;
+    basis_count = b->basisCount;
+    basisSet = b->basisSet;
+    gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count,basis_count);
 
-    N->data[0] = 0.30926;
-    N->data[1] = 0.30926;
-    N->data[2] = 0.30926;
+    //atom_output((const ATOM_INFO **)alist, b->atomCount);
+    //basis_set_output(b->basisSet, b->basisCount, "BASIS");
 
-    h1->data[0] = 2.17510;
-    h1->data[1] = 0.0;
-    h1->data[2] = 0.0;
-
-    h2->data[0] = 0.0;
-    h2->data[1] = 2.17510;
-    h2->data[2] = 0.0;
-
-    h3->data[0] = 0.0;
-    h3->data[1] = 0.0;
-    h3->data[2] = 2.17510;
-
-#ifdef DEBUG_GAUSS_BASIS_INT
-    gsl_matrix *gauss_int = gsl_matrix_calloc(3, 3);
-#endif
-
-
-#undef DEBUG_CHECK_INPUT_BASIS
-#ifdef DEBUG_CHECK_INPUT_BASIS
-    basis_set_output(&b[0], 3, "N-1S:\n");
-    basis_set_output(&b[1], 3, "N-2S:\n");
-    basis_set_output(&b[2], 3, "N-2P:\n");
-    basis_set_output(&b[3], 3, "N-2P:\n");
-    basis_set_output(&b[4], 3, "N-2P:\n");
-    basis_set_output(&b[5], 3, "H-1S:\n");
-    basis_set_output(&b[6], 3, "H-1S:\n");
-    basis_set_output(&b[7], 3, "H-1S:\n");
-#endif
-
-    atom_1_basis_num = 5;
-    atom_2_basis_num = 3;   //暂时只考虑N原子的一个P轨道
-    // 基函数的数目
-    for (u = 0; u < basis_count; u++) {
-        for (v = 0; v < basis_count; v++) {
-            result = 0;
-
-            // 判断某个基组属于哪个中心
-            // 此处基函数是按顺序存放在一维数组中
-            if (u < atom_1_basis_num) {
-            // 0 - 4为N的基函数
-                H[0] = *N;
-            }else if (u == 5){
-                H[0] = *h1;
-            }else if (u == 6){
-                H[0] = *h2;
-            }else if (u == 7){
-                H[0] = *h3;
-            }
-
-            if (v < atom_1_basis_num) {
-            // 0 - 4为N的基函数
-                H[1] = *N;
-            }else if (v == 5){
-                H[1] = *h1;
-            }else if (v == 6){
-                H[1] = *h2;
-            }else if (v == 7){
-                H[1] = *h3;
-            }
-
-#undef DEBUG_BASIS_COOR
-#ifdef DEBUG_BASIS_COOR
-    printf("-------------------%d-%d---------------------------\n", u, v);
-            basis_set_output(&b[u], 3, "第一个基函数参数:\n");
-            basis_set_output(&b[v], 3, "第二个基函数参数:\n");
-            vector_output(&H[0], 3, "第一个H原子的坐标为:\n");
-            vector_output(&H[1], 3, "第二个H原子的坐标为:\n");
-#endif
-            // Gaussian函数的数目为3
-            for (i = 0; i < 3; i++) {
-                for (j = 0; j < 3; j++) {
-                    tmp = overlap_single(&b[u].gaussian[i], &H[0], &b[v].gaussian[j], &H[1]);
-                    result += tmp;
-#ifdef DEBUG_GAUSS_BASIS_INT
-                    gsl_matrix_set(gauss_int, i, j, tmp);
-#endif
-                }
-            }
-#ifdef DEBUG_GAUSS_BASIS_INT
-            matrix_output(gauss_int, 3, "Gaussian函数的积分\n");
-#endif
+    for (i = 0; i <  basis_count; i++) {
+        for (j = 0; j < basis_count; j++) {
+            result = overlap_basis(&basisSet[i], basisSet[i].xyz, &basisSet[j],
+                            basisSet[j].xyz, 0);
+            //result_check = check_overlap(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
-            if (fabs(result) < 1.0E-10)
+            if (fabs(result) < 1.0E-12) {
                 result = 0;
-
-            gsl_matrix_set(m_overlap, u, v, result);
-//            printf("u = %d\tv = %d%20.10lf\n", u, v, result);
+            }
+            gsl_matrix_set(m_overlap, i, j, result);
         }
     }
 
-    matrix_output(m_overlap, basis_count, "重叠积分\n");
-    gsl_matrix_free(m_overlap);
-#ifdef DEBUG_GAUSS_BASIS_INT
-    gsl_matrix_free(gauss_int);
-#endif
-    gsl_vector_free(h1);
-    gsl_vector_free(h2);
-
-    return 0;
+    //matrix_output(m_overlap, basis_count, "OVERLAP INTEGRALS:");
+    return m_overlap;
 }
-*/
