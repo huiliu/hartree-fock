@@ -4,37 +4,6 @@
 #include "common.h"
 #include "overlap.h"
 
-//#define DEBUG_OVERLAP_SINGLE
-//#define DEBUG_DOUBLE_CENTER
-//#define DEBUG_OVERLAP_SINGLE
-
-int factorial(int n)
-{
-    int i, result = 1;
-
-    if (n <= 1) return 1;
-
-    for (i = 1; i <= n; i++)
-        result *= i;
-    return result;
-}
-
-int factorial_2(int n)
-{
-    int i, result = 1;
-
-    if (n % 2 == 0) {
-        if (n <= 2) return 2;
-        for (i = 2; i <= n; i += 2)
-            result *= i;
-    }else{
-        if (n <= 1) return 1;
-        for (i = 1; i <= n; i += 2)
-            result *= i;
-    }
-    return result;
-}
-
 double fact_l_lambda(int l, int lambda)
 {
     // 量子化学中册 P62 (10.6.5)

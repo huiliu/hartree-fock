@@ -6,8 +6,6 @@
 #ifndef __INTEGRAL__OVERLAP__
 #define __INTEGRAL__OVERLAP__
 
-int factorial(int);
-int factorial_2(int);
 double fact_l_lambda(int , int );
 double fi_l_ll_pax_pbx(int ii, int l, int ll, double pax, double pbx, int);
 double I_xyz(int l, double pax, int ll, double pbx, double gamma, int flags);
