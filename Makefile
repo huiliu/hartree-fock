@@ -1,6 +1,6 @@
 # target: [pre]
 # [TAB]  command
-all: hf read2e 2e basis.o overlap.o common.o overlap_main kinetic nuclear_elect ints.o
+all: hf read2e 2e basis.o overlap.o common.o overlap_main kinetic nuclear_elect ints.o two_e_int check_2e int_s
 
 common.o: common.c common.h
 	gcc common.c -c -Wall -g -lgsl -lm -o common.o
@@ -34,6 +34,15 @@ coord: coord.c basis.o overlap.o common.o
 
 nuclear_elect: nuclear_elect.c basis.o overlap.o common.o ints.o
 	gcc nuclear_elect.c basis.o overlap.o common.o ints.o -Wall -g -lgsl -lm -o nuclear_elect
+
+two_e_int: two_e_int.c basis.o common.o overlap.o
+	gcc two_e_int.c basis.o overlap.o common.o -Wall -g -lgsl -lm -o two_e_int
+
+check_2e: check_2e.c basis.o common.o overlap.o ints.o
+	gcc check_2e.c basis.o overlap.o common.o ints.o -Wall -g -lgsl -lm -o check_2e
+
+int_s: int_s.c basis.o common.o overlap.o ints.o
+	gcc int_s.c basis.o overlap.o common.o ints.o -Wall -g -lgsl -lm -o int_s
 
 clean:
 	rm -rf hf read2e *.o 2e *.mod overlap_main kinetic coord ints nuclear_elect
