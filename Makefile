@@ -1,6 +1,6 @@
 # target: [pre]
 # [TAB]  command
-all: hf read2e 2e basis.o overlap.o common.o kinetic.o nuclear_elect.o ints.o int2e.o check_2e int_s test
+all: hf read2e 2e basis.o overlap.o common.o hamiltonian.o ints.o int2e.o check_2e int_s test
 
 common.o: common.c common.h
 	gcc common.c -c -Wall -g -lgsl -lm -o common.o
@@ -23,14 +23,11 @@ basis.o: basis.c basis.h
 overlap.o: overlap.c overlap.h basis.o common.o
 	gcc overlap.c basis.o common.o -c -Wall -g -lm -lgsl -o overlap.o
 
-kinetic.o: kinetic.c kinetic.h overlap.o basis.o common.o ints.o
-	gcc kinetic.c overlap.o basis.o common.o ints.o -c -Wall -g -lgsl -lm -o kinetic.o
-
 coord: coord.c basis.o overlap.o common.o
 	gcc coord.c basis.o overlap.o common.o -Wall -g -lgsl -lm -o coord
 
-nuclear_elect.o: nuclear_elect.c nuclear_elect.h basis.o overlap.o common.o ints.o
-	gcc nuclear_elect.c basis.o overlap.o common.o ints.o -c -Wall -g -lgsl -lm -o nuclear_elect.o
+hamiltonian.o: hamiltonian.c hamiltonian.h basis.o overlap.o common.o ints.o
+	gcc hamiltonian.c basis.o overlap.o common.o ints.o -c -Wall -g -lgsl -lm -o hamiltonian.o
 
 int2e.o: int2e.c int2e.h basis.o common.o overlap.o
 	gcc int2e.c basis.o overlap.o common.o -c -Wall -g -lgsl -lm -o int2e.o
@@ -41,8 +38,8 @@ check_2e: check_2e.c basis.o common.o overlap.o ints.o
 int_s: int_s.c basis.o common.o overlap.o ints.o
 	gcc int_s.c basis.o overlap.o common.o ints.o -Wall -g -lgsl -lm -o int_s
 
-test: test.c basis.o common.o overlap.o kinetic.o nuclear_elect.o ints.o int2e.o
-	gcc test.c basis.o overlap.o common.o kinetic.o nuclear_elect.o ints.o int2e.o -Wall -g -lgsl -lm -o test
+test: test.c basis.o common.o overlap.o hamiltonian.o ints.o int2e.o
+	gcc test.c basis.o overlap.o common.o hamiltonian.o ints.o int2e.o -Wall -g -lgsl -lm -o test
 
 clean:
-	rm -rf hf read2e *.o 2e *.mod kinetic coord ints nuclear_elect test int_s check_2e
+	rm -rf hf read2e *.o 2e *.mod hamiltonian coord ints test int_s check_2e
