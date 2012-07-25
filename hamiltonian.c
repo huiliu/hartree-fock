@@ -394,6 +394,23 @@ gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b)
     return m_attraction;
 }
 
+// hamiltonian matrix
+gsl_matrix* hamiltonian(INPUT_INFO* b)
+{
+    int n = b->basisCount;
+    gsl_matrix* a = nuclear_attraction_matrix(b);
+    gsl_matrix* k = kinetic_matrix(b);
+    gsl_matrix* h = gsl_matrix_alloc(n, n);
+
+    gsl_matrix_memcpy(h, k);
+    gsl_matrix_sub(h, a);
+
+    gsl_matrix_free(a);
+    gsl_matrix_free(k);
+
+    return h;
+}
+
 double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount)
 {
     int i, j, s;

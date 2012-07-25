@@ -24,4 +24,5 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
 double nuclear_elect_attraction_basis(const BASIS* b1, const BASIS* b2, 
                                 ATOM_INFO **atomList, int atomCount, int debug);
 gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b);
+gsl_matrix* hamiltonian(INPUT_INFO* b);
 #endif
