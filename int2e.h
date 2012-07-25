@@ -2,6 +2,8 @@
 #include "overlap.h"
 #include "basis.h"
 
+// 使用一组数组形式输出双电子积分
+//#define __INTEGRAL__INT2E__ONE__
 
 #ifndef __INTEGRAL__INT2E__
 #define __INTEGRAL__INT2E__
@@ -21,6 +23,13 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
                               const GTO* g4, const gsl_vector* D, int debug);
 double int2e_basis(const BASIS* b1, const BASIS* b2,
                                 const BASIS* b3, const BASIS* b4);
+
+#ifdef __INTEGRAL__INT2E__ONE__
 double* int2e_matrix(INPUT_INFO* b);
 void int2e_output(double* e, int n, char* msg);
+#else
+double**** int2e_matrix(INPUT_INFO* b);
+void int2e_output(double**** e, int n, char* msg);
+#endif
+
 #endif

@@ -175,11 +175,14 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
     return result;
 }
 
+#ifdef __INTEGRAL__INT2E__ONE__
 double* int2e_matrix(INPUT_INFO* b)
+#else
+double**** int2e_matrix(INPUT_INFO* b)
+#endif
 {
-    int i, j, k, l, I, basis_count, atomCount;
+    int i, j, k, l, basis_count, atomCount;
     BASIS *basisSet;
-    double* matrix;
 
     //INPUT_INFO *b = parse_input(file_name);    
 
@@ -188,8 +191,11 @@ double* int2e_matrix(INPUT_INFO* b)
     basisSet = b->basisSet;
     atomCount = b->atomCount;
 
+#ifdef __INTEGRAL__INT2E__ONE__
+    // use one dimension array output int2e
+    double *matrix;
+    int I = 0;
     matrix = malloc(sizeof(double) * pow(basis_count, 4));
-
     for (i = 0; i < basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
             for (k = 0; k < basis_count; k++) {
@@ -197,20 +203,47 @@ double* int2e_matrix(INPUT_INFO* b)
                     I = i * pow(basis_count, 3) + j * pow(basis_count, 2) + \
                                                             k * basis_count + l;
                     matrix[I] = int2e_basis(&basisSet[i], 
-                                                         &basisSet[j], 
-                                                         &basisSet[k], 
-                                                         &basisSet[l]);
+                                            &basisSet[j], 
+                                            &basisSet[k], 
+                                            &basisSet[l]);
                 }
             }
         }
     }
     return matrix;
+#else
+    // use four dimension array output int2e
+    double ****e2;
+    e2 = (double****)malloc(sizeof(double***)*basis_count);
+    for (i = 0; i < basis_count; i++) {
+        *(e2+i) = (double***)malloc(sizeof(double**)*basis_count);
+        for (j = 0; j < basis_count; j++) {
+            *(e2[i]+j) = (double**)malloc(sizeof(double*)*basis_count);
+            for (k = 0; k < basis_count; k++) {
+                *(e2[i][j]+k) = (double*)malloc(sizeof(double)*basis_count);
+                for (l = 0; l < basis_count; l++) {
+                    e2[i][j][k][l] = int2e_basis(&basisSet[i], 
+                                                 &basisSet[j], 
+                                                 &basisSet[k], 
+                                                 &basisSet[l]);
+                }
+            }
+        }
+    }
+    return e2;
+#endif
 }
 
+#ifdef __INTEGRAL__INT2E__ONE__
 void int2e_output(double* e, int n, char* msg)
+#else
+void int2e_output(double**** e, int n, char* msg)
+#endif
 {
     int i, j, k, l;
+#ifdef __INTEGRAL__INT2E__ONE__
     int I;
+#endif
 
     printf("%s\n", msg);
 
@@ -218,9 +251,13 @@ void int2e_output(double* e, int n, char* msg)
         for (j = 0; j < n; j++) {
             for (k = 0; k < n; k++) {
                 for (l = 0; l < n; l++) {
+#ifdef __INTEGRAL__INT2E__ONE__
                     I = i * pow(n, 3) + j * pow(n, 2) + \
                                                             k * n + l;
                     printf("%15.9lf", e[I]);
+#else
+                    printf("%15.9lf", e[i][j][k][l]);
+#endif
                 }
             }
             printf("\n");
