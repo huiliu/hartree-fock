@@ -218,6 +218,7 @@ INPUT_INFO* parse_input(const char* file_name)
                 strcpy(atom->symbol, input_item);
                 // read element core electronics of atom
                 fscanf(f, "%d", &atom->n);
+                input_information->eCount += atom->n;   // record the total of electron
                 for (i = 0; i < 3; i++) {
                     // read coordination of atom
                     fscanf(f, "%lf", &tmp_coord);
@@ -247,6 +248,10 @@ INPUT_INFO* parse_input(const char* file_name)
                                     atom->basisCount = 1;
                                     break;
                                 case 2:
+                                    break;
+                                case 3:
+                                    input_information->basisCount += 5;
+                                    atom->basisCount = 5;
                                     break;
                                 case 7:
                                     // total basis count
@@ -429,4 +434,12 @@ double normalize_coeff(const GTO *g)
 
     return pow(2 * alpha / M_PI, 0.75) * sqrt(pow(4*alpha, l + m + n) / \
         (factorial_2(2*l-1) * factorial_2(2*m-1) * factorial_2(2*n-1)));
+}
+
+int gtoIsNeg(const GTO* g)
+{
+    if (g->l < 0 || g->m < 0 || g->n < 0)
+        return 1;
+    else
+        return 0;
 }

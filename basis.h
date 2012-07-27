@@ -31,6 +31,7 @@ typedef struct atom_INFORMATON_ {
 typedef struct FILE_INPUT_ {
 // 存储解析后的整个输入文件
     int atomCount;          // atom count in current system
+    int eCount;             // electron count
     int basisCount;    // basis function count
     BASIS* basisSet;   // save all of the basis set
     gsl_vector** gXYZ;   // save all of coordination
@@ -46,4 +47,5 @@ INPUT_INFO* parse_input(const char* file_name);
 BASIS* readbasis(FILE * f, int basisCount);
 double normalize_coeff(const GTO *);
 void bridge(BASIS* b, ATOM_INFO** atomList, int atomCount);
+int gtoIsNeg(const GTO* g);
 #endif
