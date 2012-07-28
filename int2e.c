@@ -51,9 +51,9 @@ void Bxyz(int l1, int l2, double PA, double PB, double gamma1,
 
     for (l = 0; l <= l1+l2; l++) {
         for (r = 0; r <= l*0.5; r++) {
-            for (i = 0; i <= (l - 2*r)*0.5; i++) {
-                for (ll = 0; ll <= l3 + l4; ll++) {
-                    for (rr = 0; rr <= ll*0.5; rr++) {
+            for (ll = 0; ll <= l3 + l4; ll++) {
+                for (rr = 0; rr <= ll*0.5; rr++) {
+                    for (i = 0; i <= (l+ll - 2*(r+rr))*0.5; i++) {
                         I = l + ll - 2*(r + rr) - i;
                         result[I] += B(l, l1, l2, PA, PB, r, gamma1, 
                                       ll, l3, l4, QC, QD, rr, gamma2, i, px);
@@ -228,8 +228,8 @@ double**** int2e_matrix(INPUT_INFO* b)
                 *(e2[i][j]+k) = (double*)malloc(sizeof(double)*basis_count);
                 for (l = 0; l < basis_count; l++) {
                     debug = 0;
-                    if (i == 0 && j == 2 && k == 0 && l == 2)
-                        debug = 1;
+                    //if (i == 0 && j == 2 && k == 0 && l == 2)
+                    //    debug = 1;
                     e2[i][j][k][l] = int2e_basis(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
