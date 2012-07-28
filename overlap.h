@@ -15,4 +15,5 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, const d
 double overlap_basis(const BASIS *, const gsl_vector *, const BASIS *, const gsl_vector *, int);
 double overlap_gto(const GTO*, const gsl_vector* A, const GTO*, const gsl_vector* B, int debug);
 gsl_matrix* overlap_matrix(INPUT_INFO* );
+double check_overlap(const BASIS* b1, const BASIS* b2, int debug);
 #endif

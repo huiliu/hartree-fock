@@ -3,6 +3,7 @@
 #include <math.h>
 #include "common.h"
 #include "overlap.h"
+#include "ints.h"
 
 double fact_l_lambda(int l, int lambda)
 {
@@ -16,6 +17,10 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
     double sum = 0;
 
 /*
+// formula come from 
+// Justin T. Fermann and Edward F. Valeev; 
+// Fundamentals of Molecular Integrals Evaluation (2.46)
+
     int top, down;
     top = GSL_MIN(ii, 2*l1-ii);
     down = GSL_MAX(-ii, ii - 2*l2);
@@ -24,11 +29,16 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
         sum += (fact_l_lambda(l1, (i + ii)/2) * fact_l_lambda(l2, (ii-i)/2) * \
                                 pow(pax, l1 - (i + ii)/2) * pow(pbx, l2 - (ii-i)/2));
     }
+*/
+
+/*
+// formula come from PyQuant cints.c
   for (i=0; i<ii+1; i++)
     if ((ii-l1 <= i) && (i <= l2)) 
       sum += fact_l_lambda(l1, ii-i)*fact_l_lambda(l2, i)*pow(pax, l1-ii+i)*pow(pbx,l2-i);
 
 */
+
 // 《量子化学》中册 P63 第一个公式
     for (i = 0; i <= l1; i++) {
         for (j = 0; j <= l2; j++) {
@@ -47,8 +57,9 @@ double I_xyz(int l1, double pax, int l2, double pbx, double gamma, int flags)
     int i;
     double sum = 0;
 
-    for (i = 0; i <= (l1 + l2) / 2; i++) {
-        sum += factorial_2(2i - 1) / pow(2 * gamma, i) * \
+// BUG 2i 
+    for (i = 0; i < floor((l1 + l2) * 0.5) + 1; i++) {
+        sum += factorial_2(2*i - 1) / pow(2 * gamma, i) * \
                 fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags);
     }
     return sum;
@@ -65,22 +76,8 @@ double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B)
     gsl_vector_memcpy(v, A);
     gsl_vector_sub(v, B);
     norm_2 = pow(gsl_blas_dnrm2(v), 2);
-/*
-//  compute normal of vector
-    double x1, y1, z1, x2, y2, z2;
-    x1 = gsl_vector_get(A, 0);
-    y1 = gsl_vector_get(A, 1);
-    z1 = gsl_vector_get(A, 2);
 
-    x2 = gsl_vector_get(B, 0);
-    y2 = gsl_vector_get(B, 1);
-    z2 = gsl_vector_get(B, 2);
-
-
-    norm_2 = (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2);
-*/
     result = exp(-a * b * norm_2 / (a + b));
-
     return result;
 }
 
@@ -193,7 +190,7 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
     int i, j, basis_count;
     BASIS *basisSet;
     double result = 0;
-    double result_check = 0;
+    //double result_check = 0;
 
     //INPUT_INFO *b = parse_input(file_name);    
 
@@ -201,7 +198,7 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
     basis_count = b->basisCount;
     basisSet = b->basisSet;
     gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count,basis_count);
-    gsl_matrix *overlap_check = gsl_matrix_calloc(basis_count,basis_count);
+    //gsl_matrix *overlap_check = gsl_matrix_calloc(basis_count,basis_count);
 
     //atom_output((const ATOM_INFO **)alist, b->atomCount);
     //basis_set_output(b->basisSet, b->basisCount, "BASIS");
@@ -210,17 +207,61 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
         for (j = 0; j < basis_count; j++) {
             result = overlap_basis(&basisSet[i], basisSet[i].xyz, &basisSet[j],
                             basisSet[j].xyz, 0);
-            result_check = check_overlap(&basisSet[i], &basisSet[j], 0);
+            //result_check = check_overlap(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
             }
             gsl_matrix_set(m_overlap, i, j, result);
-            gsl_matrix_set(overlap_check, i, j, result);
+            //gsl_matrix_set(overlap_check, i, j, result);
         }
     }
-    matrix_output(overlap_check, basis_count, "CHECK OVERLAP:");
+    //matrix_output(overlap_check, basis_count, "CHECK OVERLAP:");
 
     //matrix_output(m_overlap, basis_count, "OVERLAP INTEGRALS:");
     return m_overlap;
+}
+
+double check_overlap(const BASIS* b1, const BASIS* b2, int debug)
+{
+    int i, j;
+    int l1, m1, n1, l2, m2, n2;
+    double alpha1, alpha2;
+    double xa, ya, za, xb, yb, zb;
+    int gaussCount_1, gaussCount_2;
+    GTO *g1, *g2;
+    gsl_vector *A, *B;
+    double result = 0;
+
+    gaussCount_1 = b1->gaussCount;
+    gaussCount_2 = b2->gaussCount;
+
+    for (i = 0; i < gaussCount_1; i++) {
+        for (j = 0; j < gaussCount_2; j++) {
+            g1= &b1->gaussian[i];
+            g2= &b2->gaussian[j];
+
+            A = b1->xyz;
+            B = b2->xyz;
+
+            alpha1 = g1->alpha;
+            alpha2 = g2->alpha;
+
+
+            l1 = g1->l; m1 = g1->m; n1 = g1->n;
+            l2 = g2->l; m2 = g2->m; n2 = g2->n;
+            xa = gsl_vector_get(A, 0);
+            ya = gsl_vector_get(A, 1);
+            za = gsl_vector_get(A, 2);
+
+            xb = gsl_vector_get(B, 0);
+            yb = gsl_vector_get(B, 1);
+            zb = gsl_vector_get(B, 2);
+
+            result += overlap(alpha1, l1, m1, n1, xa, ya, za, 
+                              alpha2, l2, m2, n2, xb, yb, zb) * \
+                              g1->coeff * g1->norm * g2->coeff * g2->norm;
+        }
+    }
+    return result;
 }
