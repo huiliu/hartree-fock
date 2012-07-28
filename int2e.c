@@ -24,10 +24,9 @@ double B(int l, int l1, int l2, double PA, double PB, int r, double gamma1,
 
     result = pow(-1, ll+i) * theta(l, l1, l2, PA, PB, r, gamma1) * \
                             theta(ll, l3, l4, QC, QD, rr, gamma2);
-    result *= pow(2*delta, 2*(r+rr)) * factorial(l + ll -2*(r + rr)) * \
-                pow(delta, i) * pow(px, l + ll - 2*(r + rr + i));
-    result = result / pow(4*delta, l + ll) * factorial(i) * factorial(l + ll - \
-                                                                2*(r + rr + i));
+    result *= pow(delta, 2*(r+rr)+i-l-ll) * factorial(l + ll -2*(r + rr)) * \
+              pow(px, l + ll - 2*(r + rr + i)) * pow(4, r + rr - l - ll);
+    result /= (factorial(i) * factorial(l + ll - 2*(r + rr + i)));
 
     return result;
 }
@@ -51,11 +50,11 @@ void Bxyz(int l1, int l2, double PA, double PB, double gamma1,
 
 
     for (l = 0; l <= l1+l2; l++) {
-        for (r = 0; r <= l/2; r++) {
-            for (i = 0; i <= (l - 2*r)/2; i++) {
+        for (r = 0; r <= l*0.5; r++) {
+            for (i = 0; i <= (l - 2*r)*0.5; i++) {
                 for (ll = 0; ll <= l3 + l4; ll++) {
-                    for (rr = 0; rr <= ll/2; rr++) {
-                        I = l + ll - 2*r + 2*rr - i;
+                    for (rr = 0; rr <= ll*0.5; rr++) {
+                        I = l + ll - 2*(r + rr) - i;
                         result[I] += B(l, l1, l2, PA, PB, r, gamma1, 
                                       ll, l3, l4, QC, QD, rr, gamma2, i, px);
                     }
@@ -126,6 +125,21 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
     Bxyz(g1->n, g2->n, PA->data[2], PB->data[2], gamma1, \
          g3->n, g4->n, QC->data[2], QD->data[2], gamma2, PQ->data[2], Bz);
 
+
+    for (i = 0; i <= L; i++) {
+        for (j = 0; j <= M; j++) {
+            for (k = 0; k <= N; k++) {
+                if (debug == 1)
+                    printf("%12.6lf%12.6lf%12.6lf %d %d %d\n", Bx[i], By[j], Bz[k], g4->l, g4->m, g4->n);
+                result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, finc);
+            }
+        }
+    }
+
+    result *= omega(alpha1, alpha2, alpha3, alpha4, norm_ab, norm_cd) \
+                * g1->norm * g2->norm * g3->norm * g4->norm \
+                * g1->coeff * g2->coeff * g3->coeff * g4->coeff;
+
     gsl_vector_free(PA);
     gsl_vector_free(PB);
     gsl_vector_free(QC);
@@ -134,22 +148,12 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector_free(CD);
     gsl_vector_free(PQ);
 
-    for (i = 0; i <= L; i++)
-        for (j = 0; j <= M; j++)
-            for (k = 0; k <= N; k++)
-                result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, finc);
-
-    result *= omega(alpha1, alpha2, alpha3, alpha4, norm_ab, norm_cd) \
-                * g1->norm * g2->norm * g3->norm * g4->norm \
-                * g1->coeff * g2->coeff * g3->coeff * g4->coeff;
-
     return result;
 }
 
 double int2e_basis(const BASIS* b1, const BASIS* b2,
-                                const BASIS* b3, const BASIS* b4)
+                   const BASIS* b3, const BASIS* b4, int debug)
 {
-    int debug = 0;
     int i, j, k, l, gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
     double result = 0;
 
@@ -163,10 +167,10 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
             for (k = 0; k < gaussCount_3; k++) {
                 for (l = 0; l < gaussCount_4; l++) {
                     result += int2e_gto(&b1->gaussian[i], b1->xyz,
-                                                     &b2->gaussian[j], b2->xyz,
-                                                     &b3->gaussian[k], b3->xyz,
-                                                     &b4->gaussian[l], b4->xyz,
-                                                     debug);
+                                        &b2->gaussian[j], b2->xyz,
+                                        &b3->gaussian[k], b3->xyz,
+                                        &b4->gaussian[l], b4->xyz,
+                                        debug);
                 }
             }
         }
@@ -181,6 +185,7 @@ double* int2e_matrix(INPUT_INFO* b)
 double**** int2e_matrix(INPUT_INFO* b)
 #endif
 {
+    int debug = 0;
     int i, j, k, l, basis_count, atomCount;
     BASIS *basisSet;
 
@@ -205,7 +210,7 @@ double**** int2e_matrix(INPUT_INFO* b)
                     matrix[I] = int2e_basis(&basisSet[i], 
                                             &basisSet[j], 
                                             &basisSet[k], 
-                                            &basisSet[l]);
+                                            &basisSet[l], debug);
                 }
             }
         }
@@ -222,10 +227,13 @@ double**** int2e_matrix(INPUT_INFO* b)
             for (k = 0; k < basis_count; k++) {
                 *(e2[i][j]+k) = (double*)malloc(sizeof(double)*basis_count);
                 for (l = 0; l < basis_count; l++) {
+                    debug = 0;
+                    if (i == 0 && j == 2 && k == 0 && l == 2)
+                        debug = 1;
                     e2[i][j][k][l] = int2e_basis(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
-                                                 &basisSet[l]);
+                                                 &basisSet[l], debug);
                 }
             }
         }
@@ -256,11 +264,11 @@ void int2e_output(double**** e, int n, char* msg)
                                                             k * n + l;
                     printf("%15.9lf", e[I]);
 #else
-                    printf("%15.9lf", e[i][j][k][l]);
+                    if (fabs(e[i][j][k][l]) > 1.0E-8)
+                        printf("|%d%d%d%d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
 #endif
                 }
             }
-            printf("\n");
         }
     }
 }
