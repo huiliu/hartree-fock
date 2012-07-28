@@ -1,5 +1,6 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
+#include "basis.h"
 
 #ifndef __INTEGRAL__COMMON__
 #define __INTEGRAL__COMMON__

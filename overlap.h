@@ -1,6 +1,7 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_math.h>
 #include "basis.h"
 
 #ifndef __INTEGRAL__OVERLAP__

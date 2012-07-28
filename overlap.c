@@ -7,19 +7,33 @@
 double fact_l_lambda(int l, int lambda)
 {
     // 量子化学中册 P62 (10.6.5)
-    return (double)factorial(l) / (factorial(lambda) * factorial(l - lambda));
+    return factorial(l) / (factorial(lambda) * factorial(l - lambda));
 }
 
 double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags)
 {
-// 《量子化学》中册 P63 第一个公式
     int i, j;
     double sum = 0;
 
+/*
+    int top, down;
+    top = GSL_MIN(ii, 2*l1-ii);
+    down = GSL_MAX(-ii, ii - 2*l2);
+
+    for (i = down; i <= top; i+=2) {
+        sum += (fact_l_lambda(l1, (i + ii)/2) * fact_l_lambda(l2, (ii-i)/2) * \
+                                pow(pax, l1 - (i + ii)/2) * pow(pbx, l2 - (ii-i)/2));
+    }
+  for (i=0; i<ii+1; i++)
+    if ((ii-l1 <= i) && (i <= l2)) 
+      sum += fact_l_lambda(l1, ii-i)*fact_l_lambda(l2, i)*pow(pax, l1-ii+i)*pow(pbx,l2-i);
+
+*/
+// 《量子化学》中册 P63 第一个公式
     for (i = 0; i <= l1; i++) {
         for (j = 0; j <= l2; j++) {
             if (i + j == ii) {
-                sum += (fact_l_lambda(l1, i) * fact_l_lambda(l2, j) * \
+                sum += (fact_l_lambda(l1, i) * fact_l_lambda(l2, j) *
                                     pow(pax, l1 - i) * pow(pbx, l2 - j));
             }
         }
@@ -34,8 +48,6 @@ double I_xyz(int l1, double pax, int l2, double pbx, double gamma, int flags)
     double sum = 0;
 
     for (i = 0; i <= (l1 + l2) / 2; i++) {
-        if (flags == 1)
-            printf("i = %d l1 = %d l2 = %d fi = %lf\n",i,l1,l2, fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags));
         sum += factorial_2(2i - 1) / pow(2 * gamma, i) * \
                 fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags);
     }
@@ -48,8 +60,14 @@ double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B)
 // A, B 为坐标
 
     double result, norm_2;
-    double x1, y1, z1, x2, y2, z2;
+    gsl_vector* v = gsl_vector_alloc(3);
 
+    gsl_vector_memcpy(v, A);
+    gsl_vector_sub(v, B);
+    norm_2 = pow(gsl_blas_dnrm2(v), 2);
+/*
+//  compute normal of vector
+    double x1, y1, z1, x2, y2, z2;
     x1 = gsl_vector_get(A, 0);
     y1 = gsl_vector_get(A, 1);
     z1 = gsl_vector_get(A, 2);
@@ -60,6 +78,7 @@ double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B)
 
 
     norm_2 = (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2);
+*/
     result = exp(-a * b * norm_2 / (a + b));
 
     return result;
@@ -135,8 +154,6 @@ double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_
     K = gauss_K(g1->alpha, A, g2->alpha, B);
 
     result = pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
-    // doesn't do normalization
-    //result = pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * coeff1 * coeff2;
     if (debug == 2) {
                 printf("--------------------------------------------\n");
                 vector_output(PA, 3, "PA:");
@@ -176,6 +193,7 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
     int i, j, basis_count;
     BASIS *basisSet;
     double result = 0;
+    double result_check = 0;
 
     //INPUT_INFO *b = parse_input(file_name);    
 
@@ -183,6 +201,7 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
     basis_count = b->basisCount;
     basisSet = b->basisSet;
     gsl_matrix *m_overlap = gsl_matrix_calloc(basis_count,basis_count);
+    gsl_matrix *overlap_check = gsl_matrix_calloc(basis_count,basis_count);
 
     //atom_output((const ATOM_INFO **)alist, b->atomCount);
     //basis_set_output(b->basisSet, b->basisCount, "BASIS");
@@ -191,14 +210,16 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
         for (j = 0; j < basis_count; j++) {
             result = overlap_basis(&basisSet[i], basisSet[i].xyz, &basisSet[j],
                             basisSet[j].xyz, 0);
-            //result_check = check_overlap(&basisSet[i], &basisSet[j], 0);
+            result_check = check_overlap(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
             }
             gsl_matrix_set(m_overlap, i, j, result);
+            gsl_matrix_set(overlap_check, i, j, result);
         }
     }
+    matrix_output(overlap_check, basis_count, "CHECK OVERLAP:");
 
     //matrix_output(m_overlap, basis_count, "OVERLAP INTEGRALS:");
     return m_overlap;

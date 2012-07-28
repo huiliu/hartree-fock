@@ -50,27 +50,17 @@ double F_inc_gamma(int m ,double w)
 
 int factorial(int n)
 {
-    int i, result = 1;
-
     if (n <= 1) return 1;
 
-    for (i = 1; i <= n; i++)
-        result *= i;
-    return result;
+    return n*factorial(n-1);
 }
 
 int factorial_2(int n)
 {
-    int i, result = 1;
-
     if (n % 2 == 0) {
         if (n <= 2) return 2;
-        for (i = 2; i <= n; i += 2)
-            result *= i;
     }else{
         if (n <= 1) return 1;
-        for (i = 1; i <= n; i += 2)
-            result *= i;
     }
-    return result;
+    return n * factorial_2(n-2);
 }

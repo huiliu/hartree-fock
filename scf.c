@@ -16,17 +16,23 @@
 
 int main(int argc, char** argv)
 {
-    char *inputFile;
-    if (argc < 2)
+    char *inputFile, *coeffFile;
+    if (argc < 2) {
         inputFile = "input_file";
-    else
+        coeffFile = NULL;
+    }else if (argc == 2) {
         inputFile = argv[1];
+        coeffFile = NULL;
+    }else if (argc == 3) {
+        inputFile = argv[1];
+        coeffFile = argv[2];
+    }
 
-    HartreeFock(inputFile);
+    HartreeFock(inputFile, coeffFile);
     return 0;
 }
 
-void HartreeFock(char* fname)
+void HartreeFock(char* fname, char* coeffFile)
 {
     int i, n;
     FILE *f;
@@ -36,6 +42,7 @@ void HartreeFock(char* fname)
     b = parse_input(fname);
 
     n = b->basisCount;
+    printf("TOTAL ELECTRON: %d\n", b->eCount);
     gsl_matrix* S = overlap_matrix(b);
     gsl_matrix* H = hamiltonian(b);
 #ifdef __INTEGRAL__INT2E__ONE__
@@ -45,6 +52,7 @@ void HartreeFock(char* fname)
 #endif
     int2e = int2e_matrix(b);
 
+// ---------- READ COEFF DATA FROM FILE --------
     Density = (double**)malloc(sizeof(double*)*n);
     for (i = 0; i < n; i++)
         *(Density+i) = malloc(sizeof(double)*n);
@@ -52,11 +60,15 @@ void HartreeFock(char* fname)
     char *file_coeff = "coeff";
     gsl_matrix *coeff  = gsl_matrix_alloc(n, n);
 
+    if (coeffFile == NULL)
+        file_coeff = "coeff";
+    else
+        file_coeff = coeffFile;
     //读入系数矩阵
     f = fopen(file_coeff, "r");
     gsl_matrix_fscanf(f, coeff);
     fclose(f);
-
+// -----------------END --------------------
 
     i = 0;
     int itmax = 1;
@@ -66,7 +78,7 @@ void HartreeFock(char* fname)
     for (i = 0; i < itmax; i++) {
         printf("iter %d\n", i);
         //计算密度矩阵
-        density(Density, coeff, n);
+        density(Density, coeff, b->eCount, n);
         // 计算FOCK矩阵
         gsl_matrix *F = Fock(H, int2e, Density, n);
         matrix_output(F, n, "FOCK矩阵为:\n");
@@ -79,14 +91,14 @@ void HartreeFock(char* fname)
             old_energy = energy;
     }
 }
-void density(double **Density, gsl_matrix* coef, int n)
+void density(double **Density, gsl_matrix* coef, int e, int n)
 {
     int i, j, k;
     printf("%s","DENSITY MATRIX:\n");
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             Density[i][j] = 0;
-            for (k = 0; k < 1; k++) {
+            for (k = 0; k < e/2; k++) {
                 Density[i][j] += 2 * gsl_matrix_get(coef, i, k) * gsl_matrix_get(coef, j, k);
             }
             printf("%15.6E", Density[i][j]);

@@ -1,6 +1,6 @@
 # target: [pre]
 # [TAB]  command
-all: hf read2e 2e basis.o overlap.o common.o hamiltonian.o ints.o int2e.o check_2e int_s test
+all: hf read2e 2e basis.o overlap.o common.o hamiltonian.o ints.o int2e.o check_2e int_s test scf
 
 common.o: common.c common.h
 	gcc common.c -c -Wall -g -lgsl -lm -o common.o
@@ -40,6 +40,9 @@ int_s: int_s.c basis.o common.o overlap.o ints.o
 
 test: test.c basis.o common.o overlap.o hamiltonian.o ints.o int2e.o
 	gcc test.c basis.o overlap.o common.o hamiltonian.o ints.o int2e.o -Wall -g -lgsl -lm -o test
+
+scf: scf.c scf.h common.o basis.o overlap.o hamiltonian.o int2e.o
+	gcc scf.c basis.o overlap.o common.o hamiltonian.o ints.o int2e.o -Wall -g -lgsl -lm -o scf
 
 clean:
 	rm -rf hf read2e *.o 2e *.mod hamiltonian coord ints test int_s check_2e
