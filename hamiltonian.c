@@ -39,7 +39,6 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A,
         kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gto(g1, A, &g2_1, B, debug);
 
     return kinetic_xyz;
-
 /*
 // Ohata K, Taketa H, Huzinaga S. Phys Soc Japan, 1966, 2:63
 // formula (2.14)
@@ -151,74 +150,6 @@ double kinetic_gto(const GTO *g1, const gsl_vector* A,
     kinetic_I_z = kinetic_I_xyz(g1, A, g2, B, 2, debug);
 
     result = kinetic_I_x + kinetic_I_y + kinetic_I_z;
-
-    double alpha1, alpha2, xa, ya, za, xb, yb, zb;
-    int l1, m1, n1, l2, m2, n2;
-    double result_c = 0;
-
-            alpha1 = g1->alpha;
-            alpha2 = g2->alpha;
-
-            l1 = g1->l; m1 = g1->m; n1 = g1->n;
-            l2 = g2->l; m2 = g2->m; n2 = g2->n;
-            xa = gsl_vector_get(A, 0);
-            ya = gsl_vector_get(A, 1);
-            za = gsl_vector_get(A, 2);
-
-            xb = gsl_vector_get(B, 0);
-            yb = gsl_vector_get(B, 1);
-            zb = gsl_vector_get(B, 2);
-
-            result_c = kinetic(alpha1, l1, m1, n1, xa, ya, za, 
-                              alpha2, l2, m2, n2, xb, yb, zb) * \
-                              g1->coeff * g1->norm * g2->coeff * g2->norm;
-            //if (g2->l == 1 || g2->m == 1 || g2->n == 1)
-            if (g1->l == 1 && g2->l == 1)
-                printf("K=%15.6E\tC=%15.6E\n", result, result_c);
-    return result;
-}
-
-
-double check_kinetic(const BASIS* b1, const BASIS* b2, int debug)
-{
-    int i, j;
-    int gaussCount_1, gaussCount_2;
-    double alpha1, alpha2, xa, ya, za, xb, yb, zb;
-    int l1, m1, n1, l2, m2, n2;
-    GTO *g1, *g2;
-    gsl_vector *A, *B;
-    double result = 0;
-
-    gaussCount_1 = b1->gaussCount;
-    gaussCount_2 = b2->gaussCount;
-
-    for (i = 0; i < gaussCount_1; i++) {
-        for (j = 0; j < gaussCount_2; j++) {
-            g1= &b1->gaussian[i];
-            g2= &b2->gaussian[j];
-
-            A = b1->xyz;
-            B = b2->xyz;
-
-            alpha1 = g1->alpha;
-            alpha2 = g2->alpha;
-
-
-            l1 = g1->l; m1 = g1->m; n1 = g1->n;
-            l2 = g2->l; m2 = g2->m; n2 = g2->n;
-            xa = gsl_vector_get(A, 0);
-            ya = gsl_vector_get(A, 1);
-            za = gsl_vector_get(A, 2);
-
-            xb = gsl_vector_get(B, 0);
-            yb = gsl_vector_get(B, 1);
-            zb = gsl_vector_get(B, 2);
-
-            result += kinetic(alpha1, l1, m1, n1, xa, ya, za, 
-                              alpha2, l2, m2, n2, xb, yb, zb) * \
-                              g1->coeff * g1->norm * g2->coeff * g2->norm;
-        }
-    }
     return result;
 }
 
@@ -248,7 +179,7 @@ gsl_matrix* kinetic_matrix(INPUT_INFO* b)
     int i, j, basis_count, atomCount;
     BASIS *basisSet;
     double result = 0;
-    double result_check = 0;
+    //double result_check = 0;
 
     //INPUT_INFO *b = parse_input(file_name);    
 
@@ -258,23 +189,23 @@ gsl_matrix* kinetic_matrix(INPUT_INFO* b)
     atomCount = b->atomCount;
 
     gsl_matrix *m_kinetic = gsl_matrix_calloc(basis_count, basis_count);
-    gsl_matrix *kinetic_check = gsl_matrix_calloc(basis_count, basis_count);
+    //gsl_matrix *kinetic_check = gsl_matrix_calloc(basis_count, basis_count);
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
             debug = 0;
             result = kinetic_basis(&basisSet[i], &basisSet[j], debug);
-            result_check = check_kinetic(&basisSet[i], &basisSet[j], 0);
+            //result_check = check_kinetic(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
             if (fabs(result) < 1.0E-12) {
                 result = 0;
             }
             gsl_matrix_set(m_kinetic, i, j, result);
-            gsl_matrix_set(kinetic_check, i, j, result_check);
+            //gsl_matrix_set(kinetic_check, i, j, result_check);
         }
     }
     //matrix_output(m_kinetic, basis_count, "KINETIC");
-    matrix_output(kinetic_check, basis_count, "CHECK KINETIC:");
+    //matrix_output(kinetic_check, basis_count, "CHECK KINETIC:");
     return m_kinetic;
 }
 
@@ -511,6 +442,49 @@ double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int
                                 xb, yb, zb, norm2, l2, m2, n2, alpha2, \
                                 xc, yc, zc);
             }
+        }
+    }
+    return result;
+}
+
+double check_kinetic(const BASIS* b1, const BASIS* b2, int debug)
+{
+    int i, j;
+    int gaussCount_1, gaussCount_2;
+    double alpha1, alpha2, xa, ya, za, xb, yb, zb;
+    int l1, m1, n1, l2, m2, n2;
+    GTO *g1, *g2;
+    gsl_vector *A, *B;
+    double result = 0;
+
+    gaussCount_1 = b1->gaussCount;
+    gaussCount_2 = b2->gaussCount;
+
+    for (i = 0; i < gaussCount_1; i++) {
+        for (j = 0; j < gaussCount_2; j++) {
+            g1= &b1->gaussian[i];
+            g2= &b2->gaussian[j];
+
+            A = b1->xyz;
+            B = b2->xyz;
+
+            alpha1 = g1->alpha;
+            alpha2 = g2->alpha;
+
+
+            l1 = g1->l; m1 = g1->m; n1 = g1->n;
+            l2 = g2->l; m2 = g2->m; n2 = g2->n;
+            xa = gsl_vector_get(A, 0);
+            ya = gsl_vector_get(A, 1);
+            za = gsl_vector_get(A, 2);
+
+            xb = gsl_vector_get(B, 0);
+            yb = gsl_vector_get(B, 1);
+            zb = gsl_vector_get(B, 2);
+
+            result += kinetic(alpha1, l1, m1, n1, xa, ya, za, 
+                              alpha2, l2, m2, n2, xb, yb, zb) * \
+                              g1->coeff * g1->norm * g2->coeff * g2->norm;
         }
     }
     return result;
