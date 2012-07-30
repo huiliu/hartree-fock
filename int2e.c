@@ -22,7 +22,7 @@ double B(int l, int l1, int l2, double PA, double PB, int r, double gamma1,
     double result = 0;
     double delta = 0.25 * (1/gamma1 + 1/gamma2);
 
-    result = pow(-1, ll+i) * theta(l, l1, l2, PA, PB, r, gamma1) * \
+    result = pow(-1, l+i) * theta(l, l1, l2, PA, PB, r, gamma1) * \
                             theta(ll, l3, l4, QC, QD, rr, gamma2);
     result *= pow(delta, 2*(r+rr)+i-l-ll) * factorial(l + ll -2*(r + rr)) * \
               pow(px, l + ll - 2*(r + rr + i)) * pow(4, r + rr - l - ll);
@@ -95,23 +95,23 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
     PA = gsl_vector_alloc(3); PB = gsl_vector_alloc(3);
     QC = gsl_vector_alloc(3); QD = gsl_vector_alloc(3);
     AB = gsl_vector_alloc(3); CD = gsl_vector_alloc(3);
+    PQ = gsl_vector_alloc(3);
 
     gsl_vector_memcpy(PA, P); gsl_vector_memcpy(PB, P);
     gsl_vector_memcpy(QC, Q); gsl_vector_memcpy(QD, Q);
-
-    PQ = gsl_vector_alloc(3);
+    gsl_vector_memcpy(AB, A); gsl_vector_memcpy(CD, C);
     gsl_vector_memcpy(PQ, P);
-    gsl_vector_sub(PQ, Q);
-    norm_pq_2 = pow(gsl_blas_dnrm2(PQ), 2);
 
     gsl_vector_sub(PA, A); gsl_vector_sub(PB, B);
     gsl_vector_sub(QC, C); gsl_vector_sub(QD, D);
-
-    gsl_vector_memcpy(AB, A); gsl_vector_memcpy(CD, C);
     gsl_vector_sub(AB, B); gsl_vector_sub(CD, D);
+    gsl_vector_sub(PQ, Q);
+
 
     norm_ab = gsl_blas_dnrm2(AB);
     norm_cd = gsl_blas_dnrm2(CD);
+
+    norm_pq_2 = pow(gsl_blas_dnrm2(PQ), 2);
 
     finc = norm_pq_2 * gamma1 * gamma2/(gamma1 + gamma2);
 
@@ -120,8 +120,10 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
 
     Bxyz(g1->l, g2->l, PA->data[0], PB->data[0], gamma1, \
          g3->l, g4->l, QC->data[0], QD->data[0], gamma2, PQ->data[0], Bx);
+
     Bxyz(g1->m, g2->m, PA->data[1], PB->data[1], gamma1, \
          g3->m, g4->m, QC->data[1], QD->data[1], gamma2, PQ->data[1], By);
+
     Bxyz(g1->n, g2->n, PA->data[2], PB->data[2], gamma1, \
          g3->n, g4->n, QC->data[2], QD->data[2], gamma2, PQ->data[2], Bz);
 
@@ -147,6 +149,8 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector_free(AB);
     gsl_vector_free(CD);
     gsl_vector_free(PQ);
+    gsl_vector_free(P);
+    gsl_vector_free(Q);
 
     return result;
 }
@@ -265,7 +269,7 @@ void int2e_output(double**** e, int n, char* msg)
                     printf("%15.9lf", e[I]);
 #else
                     if (fabs(e[i][j][k][l]) > 1.0E-8)
-                        printf("|%d%d%d%d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
+                        printf("%d%d%d%d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
 #endif
                 }
             }
