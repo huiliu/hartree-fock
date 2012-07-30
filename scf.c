@@ -42,7 +42,7 @@ void HartreeFock(char* fname, char* coeffFile)
     b = parse_input(fname);
 
     n = b->basisCount;
-    printf("TOTAL ELECTRON: %d\n", b->eCount);
+    //printf("TOTAL ELECTRON: %d\n", b->eCount);
     gsl_matrix* S = overlap_matrix(b);
     gsl_matrix* H = hamiltonian(b);
 #ifdef __INTEGRAL__INT2E__ONE__
@@ -71,20 +71,21 @@ void HartreeFock(char* fname, char* coeffFile)
 // -----------------END --------------------
 
     i = 0;
-    int itmax = 1;
+    int itmax = 200;
 
     double energy, old_energy = 0.0;
 
     for (i = 0; i < itmax; i++) {
-        printf("iter %d\n", i);
+        printf("\niter %d\n", i);
         //计算密度矩阵
         density(Density, coeff, b->eCount, n);
         // 计算FOCK矩阵
         gsl_matrix *F = Fock(H, int2e, Density, n);
-        matrix_output(F, n, "FOCK矩阵为:\n");
+        matrix_output(F, n, "FOCK矩阵为:");
 
         gsl_matrix *s = S_i_root(S, n);
         coeff = scf(F, s, n, &energy);
+        printf("E = %15.8lf%15.8lf\n", old_energy, energy);
         if (fabs(energy - old_energy) < 1.0E-6)
             break;
         else
@@ -94,7 +95,7 @@ void HartreeFock(char* fname, char* coeffFile)
 void density(double **Density, gsl_matrix* coef, int e, int n)
 {
     int i, j, k;
-    printf("%s","DENSITY MATRIX:\n");
+    printf("%s %d\n","DENSITY MATRIX:", e);
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             Density[i][j] = 0;
@@ -105,10 +106,12 @@ void density(double **Density, gsl_matrix* coef, int e, int n)
         }
         printf("\n");
     }
+    gsl_matrix_free(coef);
 }
 
 gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
 {
+    gsl_matrix *c = gsl_matrix_calloc(n, n);
     gsl_matrix *eigVector = gsl_matrix_alloc(n, n);
     gsl_eigen_symmv_workspace *w = gsl_eigen_symmv_alloc(2*n);
     gsl_vector *eigValue = gsl_vector_alloc(n);
@@ -122,17 +125,22 @@ gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
     //求本征矢量和本征值
     //gsl_eigen_symm(b, dialg_S, w);
     gsl_eigen_symmv(ftt, eigValue, eigVector, w);
+    gsl_eigen_symmv_free(w);
+    gsl_eigen_symmv_sort(eigValue, eigVector, GSL_EIGEN_SORT_VAL_ASC);
+    //gsl_eigen_symmv_sort(eigValue, eigVector, GSL_EIGEN_SORT_VAL_DESC);
+    //eigSort(eigValue, eigVector, n);
     *energy = gsl_vector_min(eigValue);
 
-    vector_output(eigValue, n, "FOCK本征值为：\n");
+    vector_output(eigValue, n, "FOCK本征值为:");
+#define DEBUG_SCF
 #ifdef DEBUG_SCF
-    matrix_output(eigVector, n,  "FOCK本征矢量为:\n");
+    matrix_output(eigVector, n,  "FOCK本征矢量为:");
+    matrix_output(s_root, n, "SQRT of Overlap:");
 #endif
 
-    gsl_matrix *c = gsl_matrix_calloc(n, n);
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, s_root, eigVector, 1.0, c);
 #ifdef DEBUG_SCF
-    matrix_output(c, n,  "新的轨道系数为:\n");
+    matrix_output(c, n,  "新的轨道系数为:");
 #endif
     return c;
 }
@@ -186,6 +194,7 @@ gsl_matrix* S_i_root(gsl_matrix *S, int n)
 
     //求本征矢量和本征值
     gsl_eigen_symmv(b, dialg_S, p, w);
+    gsl_eigen_symmv_free(w);
 #ifdef DEBUG_s_root
     vector_output(dialg_S, n, "重叠矩阵本征值为：\n");
     matrix_output(p, n,  "重叠矩阵本征矢量为:\n");
