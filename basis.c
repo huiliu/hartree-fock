@@ -164,7 +164,7 @@ void atom_output(const ATOM_INFO** atom, int n)
 // 读取基组方法的重新实现
 #define Item_count              3
 #define Atom_count_max          4
-#define Basis_set_count_max     2
+#define Basis_set_count_max     3
 
 INPUT_INFO* parse_input(const char* file_name)
 {
@@ -347,12 +347,15 @@ void bridge(BASIS* b, ATOM_INFO** atomList, int atomCount)
     }
 }
 
+#define ORBITAL_TYPE_COUNT  3
+
 // 是函数read_basis针对新的数据结构的升级版
 BASIS* readbasis(FILE * f, int basisCount)
 {
 // read the part contain basis set in the input file
 // 每个原子有几个基函数需要指定说明
-    char *sparate = "****", *atom_orbit_type = "SP";   // SP型一行有3个参数
+    char *sparate = "****";
+    char orbitalType[ORBITAL_TYPE_COUNT][3] = {"S", "SP", "D"};   // SP型一行有3个参数
     char symbol[5];
     int gauss_num; //gauss_num    每一块gauss函数的个数
     int basis_i = 0, state = 0, i;
@@ -380,7 +383,7 @@ BASIS* readbasis(FILE * f, int basisCount)
                 // read the basis set count of every atom
                 state = 2;  // start read basis set information
                 break;
-            case 2:
+            case 2: // read orbital type
                 // S   3   1.00
                 fscanf(f, "%s", symbol);
                 // if it's **** goto state 1
@@ -391,24 +394,39 @@ BASIS* readbasis(FILE * f, int basisCount)
                 fscanf(f, "%d", &gauss_num);
                 fscanf(f, "%lf", &param);
 
-                // save the gaussian function count of basis
-                basis[basis_i].gaussCount += gauss_num;
-                basis[basis_i].gaussian = calloc(sizeof(GTO), gauss_num);
-
-                if (strcmp(symbol, atom_orbit_type) == 0) {
-                // SP 有三列数据，
-                // 第一列为gaussian函数的指数，2,3列分别为2S, 2P中的组合系数
-                    state = 4;
-                    basis[basis_i+1].gaussCount += gauss_num;
-                    basis[basis_i+1].gaussian = calloc(sizeof(GTO), gauss_num);
-                    basis[basis_i+2].gaussCount += gauss_num;
-                    basis[basis_i+2].gaussian = calloc(sizeof(GTO), gauss_num);
-                    basis[basis_i+3].gaussCount += gauss_num;
-                    basis[basis_i+3].gaussian = calloc(sizeof(GTO), gauss_num);
-                }else{
-                    state = 3;  // start read basis set data of S orbital
+                for (i = 0; i < ORBITAL_TYPE_COUNT; i++) {
+                    if (strcmp(symbol, orbitalType[i]) == 0)
+                        break;
                 }
 
+                switch (i) {
+                    case 0: // S
+                        // save the gaussian function count of basis
+                        basis[basis_i].gaussCount += gauss_num;
+                        basis[basis_i].gaussian = calloc(sizeof(GTO), gauss_num);
+                        state = 3;  // start read basis set data of S orbital
+                        break;
+                    case 1: // SP 
+                        // S
+                        basis[basis_i].gaussCount += gauss_num;
+                        basis[basis_i].gaussian = calloc(sizeof(GTO), gauss_num);
+                        // P
+                        basis[basis_i+1].gaussCount += gauss_num;
+                        basis[basis_i+1].gaussian = calloc(sizeof(GTO), gauss_num);
+                        basis[basis_i+2].gaussCount += gauss_num;
+                        basis[basis_i+2].gaussian = calloc(sizeof(GTO), gauss_num);
+                        basis[basis_i+3].gaussCount += gauss_num;
+                        basis[basis_i+3].gaussian = calloc(sizeof(GTO), gauss_num);
+                        state = 4;
+                        break;
+                    case 2: // D
+                        for (i = 0; i < 6; i++) {
+                            basis[basis_i+i].gaussCount += gauss_num;
+                            basis[basis_i+i].gaussian = calloc(sizeof(GTO), gauss_num);
+                        }
+                        state = 5;
+                        break;
+                    }
                 break;
             case 3: // 当前为读取S
                 for (i = 0; i < gauss_num; i++) {
@@ -468,6 +486,54 @@ BASIS* readbasis(FILE * f, int basisCount)
                                 normalize_coeff(&basis[basis_i+3].gaussian[i]);
                 }
                 basis_i += 4;
+                state = 2;  //读完一组基函数信息，状态返回，读取下一组
+                break;
+            case 5: // read D basis set information
+                fscanf(f, "%lf", &tmp_alpha);
+                fscanf(f, "%lf", &tmp_coeff_1);
+                for (i = 0; i < gauss_num; i++) {
+                    // d_{x^{2}}
+                    basis[basis_i].gaussian[i].alpha = tmp_alpha;
+                    basis[basis_i].gaussian[i].coeff = tmp_coeff_2;
+                    basis[basis_i].gaussian[i].l = 2;
+                    basis[basis_i].gaussian[i].norm = 
+                                normalize_coeff(&basis[basis_i].gaussian[i]);
+
+                    // d_{y^{2}}
+                    basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
+                    basis[basis_i+1].gaussian[i].coeff = tmp_coeff_2;
+                    basis[basis_i+1].gaussian[i].m = 2;
+                    basis[basis_i+1].gaussian[i].norm = 
+                                normalize_coeff(&basis[basis_i+1].gaussian[i]);
+                    // d_{z^{2}}
+                    basis[basis_i+2].gaussian[i].alpha = tmp_alpha;
+                    basis[basis_i+2].gaussian[i].coeff = tmp_coeff_2;
+                    basis[basis_i+2].gaussian[i].n = 2;
+                    basis[basis_i+2].gaussian[i].norm = 
+                                normalize_coeff(&basis[basis_i+2].gaussian[i]);
+                    // d_{xy}
+                    basis[basis_i+3].gaussian[i].alpha = tmp_alpha;
+                    basis[basis_i+3].gaussian[i].coeff = tmp_coeff_2;
+                    basis[basis_i+3].gaussian[i].l = 1;
+                    basis[basis_i+3].gaussian[i].m = 1;
+                    basis[basis_i+3].gaussian[i].norm = 
+                                normalize_coeff(&basis[basis_i+3].gaussian[i]);
+                    // d_{xz}
+                    basis[basis_i+4].gaussian[i].alpha = tmp_alpha;
+                    basis[basis_i+4].gaussian[i].coeff = tmp_coeff_2;
+                    basis[basis_i+4].gaussian[i].l = 1;
+                    basis[basis_i+4].gaussian[i].n = 1;
+                    basis[basis_i+4].gaussian[i].norm = 
+                                normalize_coeff(&basis[basis_i+4].gaussian[i]);
+                    // d_{yz}
+                    basis[basis_i+5].gaussian[i].alpha = tmp_alpha;
+                    basis[basis_i+5].gaussian[i].coeff = tmp_coeff_2;
+                    basis[basis_i+5].gaussian[i].m = 1;
+                    basis[basis_i+5].gaussian[i].n = 1;
+                    basis[basis_i+5].gaussian[i].norm = 
+                                normalize_coeff(&basis[basis_i+5].gaussian[i]);
+                }
+                basis_i += 6;
                 state = 2;  //读完一组基函数信息，状态返回，读取下一组
                 break;
         }
