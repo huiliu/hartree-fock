@@ -14,7 +14,7 @@ read2e: read2e.f90
 	ifort read2e.f90 -o read2e
 
 2e: read2e
-	./read2e > 2e
+	./read2e 4> 2e
 
 ints.o: ints.c
 	$(CC) ints.c -lm -Wall -g -c -o ints.o
@@ -44,4 +44,4 @@ scf: scf.c scf.h common.o basis.o overlap.o hamiltonian.o int2e.o
 	$(CC) scf.c basis.o overlap.o common.o hamiltonian.o ints.o int2e.o -Wall -g -lgsl -lm -o scf
 
 clean:
-	rm -rf hf read2e *.o 2e *.mod hamiltonian coord ints test int_s
+	rm -rf hf read2e *.o 2e *.mod hamiltonian coord ints test int_s scf

@@ -269,7 +269,7 @@ void int2e_output(double**** e, int n, char* msg)
                     printf("%15.9lf", e[I]);
 #else
                     if (fabs(e[i][j][k][l]) > 1.0E-8)
-                        printf("%d%d%d%d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
+                        printf("%3d%3d%3d%3d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
 #endif
                 }
             }

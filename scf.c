@@ -71,7 +71,7 @@ void HartreeFock(char* fname, char* coeffFile)
 // -----------------END --------------------
 
     i = 0;
-    int itmax = 200;
+    int itmax = 20;
 
     double energy, old_energy = 0.0;
 

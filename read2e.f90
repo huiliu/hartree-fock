@@ -49,8 +49,9 @@ End Function
 program main
     character(len=5) :: arg
     integer :: n
-    call Read2E(4)
+
     call getarg(1, arg)
     read(arg, '(I5)') n
-    write(*, *) n
+
+    call Read2E(n)
 end program main
