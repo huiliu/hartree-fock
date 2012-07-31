@@ -221,7 +221,7 @@ double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int
     int flags = 0;
     double tmp, *A;
 
-    A = calloc(sizeof(double), ii);
+    A = calloc(sizeof(double), ii+1);
 
     for (i = 0; i <= ii; i++) {
         for (r = 0; r <= i/2; r++) {
@@ -295,6 +295,10 @@ if (debug == 2) {
     gsl_vector_free(PA);
     gsl_vector_free(PB);
     gsl_vector_free(PC);
+
+    free(Ax);
+    free(Ay);
+    free(Az);
 
     return result;
 }
