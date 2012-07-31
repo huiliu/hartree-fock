@@ -172,7 +172,7 @@ INPUT_INFO* parse_input(const char* file_name)
     FILE *f;
     INPUT_INFO *input_information;
     char Item[Item_count][8] = {"$COORD", "$BASIS", "$END"};
-    char BasisSetName[Basis_set_count_max][8] = {"STO-3G", "6-31G"};
+    char BasisSetName[Basis_set_count_max][8] = {"STO-3G", "6-31G", "6-31G*"};
     char input_item[9];
     ATOM_INFO *atom; // save the coordination of atoms
     int state = 0, i, j, Atom_index = 0;
@@ -263,6 +263,56 @@ INPUT_INFO* parse_input(const char* file_name)
                         }
                         break;
                     case 1: // 6-31G
+                        // Set parameters of atom.
+                        for (j = 0; j < Atom_index; j++) {
+                            atom = input_information->atomList[j];
+                            switch (atom->n) {  // according the number of atom
+                                case 1:     
+                                    // total basis count
+                                    input_information->basisCount += 2;
+                                    // the basis count of atom
+                                    atom->basisCount = 2;
+                                    break;
+                                case 2:
+                                    break;
+                                case 3:
+                                    input_information->basisCount += 9;
+                                    atom->basisCount = 9;
+                                    break;
+                                case 7:
+                                    // total basis count
+                                    input_information->basisCount += 9;
+                                    // the basis count of atom
+                                    atom->basisCount = 9;
+                                    break;
+                            }
+                        }
+                        break;
+                    case 2: // 6-31G*
+                        // Set parameters of atom.
+                        for (j = 0; j < Atom_index; j++) {
+                            atom = input_information->atomList[j];
+                            switch (atom->n) {  // according the number of atom
+                                case 1:     
+                                    // total basis count
+                                    input_information->basisCount += 2;
+                                    // the basis count of atom
+                                    atom->basisCount = 2;
+                                    break;
+                                case 2:
+                                    break;
+                                case 3:
+                                    input_information->basisCount += 15;
+                                    atom->basisCount = 15;
+                                    break;
+                                case 7:
+                                    // total basis count
+                                    input_information->basisCount += 15;
+                                    // the basis count of atom
+                                    atom->basisCount = 15;
+                                    break;
+                            }
+                        }
                         break;
                 } //end setup basis set information
 
