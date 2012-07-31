@@ -64,3 +64,13 @@ int factorial_2(int n)
     }
     return n * factorial_2(n-2);
 }
+
+void* Malloc(size_t n)
+{
+    void * p;
+    if (!(p = malloc(n))) {
+        printf("Memory Assigement Wrong!\n");
+        exit(EXIT_FAILURE);
+    }else
+        return p;
+}
