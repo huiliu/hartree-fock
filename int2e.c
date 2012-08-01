@@ -6,13 +6,14 @@
 #include "basis.h"
 #include "int2e.h"
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_math.h>
 
 double theta(int l, int l1, int l2, double PA, double PB, int r, double gamma)
 {
 // David B. Cook; Handbook of Computational Quantum Chemistry. P249
     int debug = 0;
     return fi_l_ll_pax_pbx(l, l1, l2, PA, PB, debug) * factorial(l) * \
-            pow(gamma, r-l) / factorial(r) / factorial(l - 2*r);
+            gsl_pow_int(gamma, r-l) / factorial(r) / factorial(l - 2*r);
 }
 
 double B(int l, int l1, int l2, double PA, double PB, int r, double gamma1,
@@ -22,10 +23,10 @@ double B(int l, int l1, int l2, double PA, double PB, int r, double gamma1,
     double result = 0;
     double delta = 0.25 * (1/gamma1 + 1/gamma2);
 
-    result = pow(-1, l+i) * theta(l, l1, l2, PA, PB, r, gamma1) * \
+    result = gsl_pow_int(-1, l+i) * theta(l, l1, l2, PA, PB, r, gamma1) * \
                             theta(ll, l3, l4, QC, QD, rr, gamma2);
-    result *= pow(delta, 2*(r+rr)+i-l-ll) * factorial(l + ll -2*(r + rr)) * \
-              pow(px, l + ll - 2*(r + rr + i)) * pow(4, r + rr - l - ll);
+    result *= gsl_pow_int(delta, 2*(r+rr)+i-l-ll) * factorial(l + ll -2*(r + rr)) * \
+              gsl_pow_int(px, l + ll - 2*(r + rr + i)) * gsl_pow_int(4, r + rr - l - ll);
     result /= (factorial(i) * factorial(l + ll - 2*(r + rr + i)));
 
     return result;
@@ -37,9 +38,9 @@ double omega(double alpha1, double alpha2, double alpha3, double alpha4,
     double gamma1 = alpha1 + alpha2;
     double gamma2 = alpha3 + alpha4;
 
-    return 2*pow(M_PI, 2)/(gamma1*gamma2) * sqrt(M_PI / (gamma1+gamma2)) * exp(
-                                        -alpha1*alpha2 * pow(AB, 2) / gamma1 
-                                        -alpha3*alpha4 * pow(CD, 2) / gamma2);
+    return 2*gsl_pow_2(M_PI)/(gamma1*gamma2) * sqrt(M_PI / (gamma1+gamma2)) * \
+                exp(-alpha1*alpha2 * gsl_pow_2(AB) / gamma1 
+                                       -alpha3*alpha4 * gsl_pow_2(CD) / gamma2);
 }
 
 void Bxyz(int l1, int l2, double PA, double PB, double gamma1, 
@@ -111,7 +112,7 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
     norm_ab = gsl_blas_dnrm2(AB);
     norm_cd = gsl_blas_dnrm2(CD);
 
-    norm_pq_2 = pow(gsl_blas_dnrm2(PQ), 2);
+    norm_pq_2 = gsl_pow_2(gsl_blas_dnrm2(PQ));
 
     finc = norm_pq_2 * gamma1 * gamma2/(gamma1 + gamma2);
 
@@ -204,12 +205,12 @@ double**** int2e_matrix(INPUT_INFO* b)
     // use one dimension array output int2e
     double *matrix;
     int I = 0;
-    matrix = malloc(sizeof(double) * pow(basis_count, 4));
+    matrix = malloc(sizeof(double) * gsl_pow_4(basis_count));
     for (i = 0; i < basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
             for (k = 0; k < basis_count; k++) {
                 for (l = 0; l < basis_count; l++) {
-                    I = i * pow(basis_count, 3) + j * pow(basis_count, 2) + \
+                    I = i * gsl_pow_3(basis_count) + j * gsl_pow_2(basis_count) + \
                                                             k * basis_count + l;
                     matrix[I] = int2e_basis(&basisSet[i], 
                                             &basisSet[j], 
@@ -224,6 +225,7 @@ double**** int2e_matrix(INPUT_INFO* b)
     // use four dimension array output int2e
     double ****e2;
     e2 = (double****)malloc(sizeof(double***)*basis_count);
+    omp_set_num_threads(2);
     //#pragma omp parallel for private(j, k, l)
     for (i = 0; i < basis_count; i++) {
         *(e2+i) = (double***)Malloc(sizeof(double**)*basis_count);
@@ -265,7 +267,7 @@ void int2e_output(double**** e, int n, char* msg)
             for (k = 0; k < n; k++) {
                 for (l = 0; l < n; l++) {
 #ifdef __INTEGRAL__INT2E__ONE__
-                    I = i * pow(n, 3) + j * pow(n, 2) + \
+                    I = i * gsl_pow_3(n) + j * gsl_pow_2(n) + \
                                                             k * n + l;
                     printf("%15.9lf", e[I]);
 #else

@@ -34,7 +34,7 @@ double kinetic_I_xyz(const GTO* g1, const gsl_vector* A,
 
     kinetic_xyz = alpha2 * (2*l2 + 1) * overlap_gto(g1, A, g2, B, debug);
     if(!(gtoIsNeg(&g2_2)))  // 貌似没有作用
-        kinetic_xyz -= 2 * pow(alpha2, 2) * overlap_gto(g1, A, &g2_2, B, debug);
+        kinetic_xyz -= 2 * gsl_pow_2(alpha2) * overlap_gto(g1, A, &g2_2, B, debug);
     if(!(gtoIsNeg(&g2_1)))
         kinetic_xyz -= 0.5 * l2 * (l2 - 1) * overlap_gto(g1, A, &g2_1, B, debug);
 
@@ -227,10 +227,10 @@ double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int
         for (r = 0; r <= i/2; r++) {
             for (u = 0; u <= (i-2*r)/2; u++) {
                 I = i - 2*r -u;
-                tmp = pow(-1, u) * factorial(i) * pow(Cx, i - 2*r - 2*u) * \
-                        pow(0.25/gamma, r+u) / factorial(r) / factorial(u) / \
+                tmp = gsl_pow_int(-1, u) * factorial(i) * gsl_pow_int(Cx, i - 2*r - 2*u) * \
+                        gsl_pow_int(0.25/gamma, r+u) / factorial(r) / factorial(u) / \
                         factorial(i - 2*r - 2*u);
-                A[I] += pow(-1, i) * fi_l_ll_pax_pbx(i, l1, l2, Ax, Bx, flags) * tmp;
+                A[I] += gsl_pow_int(-1, i) * fi_l_ll_pax_pbx(i, l1, l2, Ax, Bx, flags) * tmp;
                 if (debug == 2)
                     printf("A_iru = %lf\n", A[I]);
             }
@@ -270,7 +270,7 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_sub(PB, B);
     gsl_vector_sub(PC, C);
 
-    norm_pc_2 = pow(gsl_blas_dnrm2(PC), 2);
+    norm_pc_2 = gsl_pow_2(gsl_blas_dnrm2(PC));
 
     Ax = A_iru(l1, l2, PA->data[0], PB->data[0], PC->data[0], gamma, debug);
     Ay = A_iru(m1, m2, PA->data[1], PB->data[1], PC->data[1], gamma, debug);

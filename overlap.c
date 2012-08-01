@@ -16,7 +16,6 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
     int i, j;
     double sum = 0;
 
-/*
 // formula come from 
 // Justin T. Fermann and Edward F. Valeev; 
 // Fundamentals of Molecular Integrals Evaluation (2.46)
@@ -29,7 +28,6 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
         sum += (fact_l_lambda(l1, (i + ii)/2) * fact_l_lambda(l2, (ii-i)/2) * \
                                 pow(pax, l1 - (i + ii)/2) * pow(pbx, l2 - (ii-i)/2));
     }
-*/
 
 /*
 // formula come from PyQuant cints.c
@@ -39,6 +37,7 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
 
 */
 
+/*
 // 《量子化学》中册 P63 第一个公式
     for (i = 0; i <= l1; i++) {
         for (j = 0; j <= l2; j++) {
@@ -48,6 +47,7 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
             }
         }
     }
+*/
     return  sum;
 }
 
@@ -59,7 +59,7 @@ double I_xyz(int l1, double pax, int l2, double pbx, double gamma, int flags)
 
 // BUG 2i 
     for (i = 0; i < floor((l1 + l2) * 0.5) + 1; i++) {
-        sum += factorial_2(2*i - 1) / pow(2 * gamma, i) * \
+        sum += factorial_2(2*i - 1) / gsl_pow_int(2 * gamma, i) * \
                 fi_l_ll_pax_pbx(2*i, l1, l2, pax, pbx, flags);
     }
     return sum;
@@ -75,7 +75,7 @@ double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B)
 
     gsl_vector_memcpy(v, A);
     gsl_vector_sub(v, B);
-    norm_2 = pow(gsl_blas_dnrm2(v), 2);
+    norm_2 = gsl_pow_2(gsl_blas_dnrm2(v));
 
     result = exp(-a * b * norm_2 / (a + b));
     return result;

@@ -27,7 +27,7 @@ void vector_output(const gsl_vector *v, int n, char *msg)
 }
 
 #define F_INC_GAMMA_CYCLE    100
-#define F_INC_GAMMA_delta  1.0E-12
+#define F_INC_GAMMA_delta  1.0E-10
 double F_inc_gamma(int m ,double w)
 {
     double result = 0;

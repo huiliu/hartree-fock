@@ -71,7 +71,7 @@ void HartreeFock(char* fname, char* coeffFile)
 // -----------------END --------------------
 
     i = 0;
-    int itmax = 20;
+    int itmax = 200;
 
     double energy, old_energy = 0.0;
 
@@ -81,7 +81,9 @@ void HartreeFock(char* fname, char* coeffFile)
         density(Density, coeff, b->eCount, n);
         // 计算FOCK矩阵
         gsl_matrix *F = Fock(H, int2e, Density, n);
+#ifdef DEBUG_SCF
         matrix_output(F, n, "FOCK矩阵为:");
+#endif
 
         gsl_matrix *s = S_i_root(S, n);
         coeff = scf(F, s, n, &energy);
@@ -95,18 +97,27 @@ void HartreeFock(char* fname, char* coeffFile)
 void density(double **Density, gsl_matrix* coef, int e, int n)
 {
     int i, j, k;
+
+#ifdef DEBUG_SCF
     printf("%s %d\n","DENSITY MATRIX:", e);
+#endif
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             Density[i][j] = 0;
             for (k = 0; k < e/2; k++) {
                 Density[i][j] += 2 * gsl_matrix_get(coef, i, k) * gsl_matrix_get(coef, j, k);
             }
+#ifdef DEBUG_SCF
             printf("%15.6E", Density[i][j]);
+#endif
         }
+#ifdef DEBUG_SCF
         printf("\n");
+#endif
     }
+#ifdef DEBUG_SCF
     gsl_matrix_free(coef);
+#endif
 }
 
 gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
@@ -128,11 +139,9 @@ gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
     gsl_eigen_symmv_free(w);
     gsl_eigen_symmv_sort(eigValue, eigVector, GSL_EIGEN_SORT_VAL_ASC);
     //gsl_eigen_symmv_sort(eigValue, eigVector, GSL_EIGEN_SORT_VAL_DESC);
-    //eigSort(eigValue, eigVector, n);
     *energy = gsl_vector_min(eigValue);
 
     vector_output(eigValue, n, "FOCK本征值为:");
-#define DEBUG_SCF
 #ifdef DEBUG_SCF
     matrix_output(eigVector, n,  "FOCK本征矢量为:");
     matrix_output(s_root, n, "SQRT of Overlap:");
