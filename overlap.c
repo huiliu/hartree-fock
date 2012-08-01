@@ -221,7 +221,7 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
     //matrix_output(m_overlap, basis_count, "OVERLAP INTEGRALS:");
     return m_overlap;
 }
-
+/*
 double check_overlap(const BASIS* b1, const BASIS* b2, int debug)
 {
     int i, j;
@@ -265,3 +265,4 @@ double check_overlap(const BASIS* b1, const BASIS* b2, int debug)
     }
     return result;
 }
+*/

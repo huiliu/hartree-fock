@@ -402,7 +402,7 @@ gsl_matrix* hamiltonian(INPUT_INFO* b)
 
     return h;
 }
-
+/*
 double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount)
 {
     int i, j, s;
@@ -493,3 +493,4 @@ double check_kinetic(const BASIS* b1, const BASIS* b2, int debug)
     }
     return result;
 }
+*/
