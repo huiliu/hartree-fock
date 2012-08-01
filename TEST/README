@@ -1,0 +1,10 @@
+USAGE:
+    1. compute integrals
+        ../test <input file>
+
+            input file  *.inp
+    2. HF-SCF
+        ../scf <input file> <guess file>
+            
+            input file  *.inp
+            guess file  *.guess
