@@ -1,6 +1,6 @@
 USAGE:
     1. compute integrals
-        ../test <input file>
+        ../int <input file>
 
             input file  *.inp
     2. HF-SCF
