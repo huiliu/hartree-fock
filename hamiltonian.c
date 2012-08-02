@@ -215,6 +215,7 @@ gsl_matrix* kinetic_matrix(INPUT_INFO* b)
 
 double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int debug)
 {
+// J. Phys. Soc. Japan, Vol 21, No. 11, 1966
 // formula (2.18)
     int ii = l1 + l2;
     int i, r, u, I;
@@ -242,6 +243,8 @@ double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int
 double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
         const GTO* g2, const gsl_vector* B, const gsl_vector* C, int debug)
 {
+// J. Phys. Soc. Japan, Vol 21, No. 11, 1966
+// Formula  (2.17)
     int flags = 0;
     gsl_vector* P = gaussian_product_center(g1->alpha, A, g2->alpha, B, flags);
     gsl_vector *PA, *PB, *PC;
