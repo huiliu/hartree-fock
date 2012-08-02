@@ -224,20 +224,36 @@ double**** int2e_matrix(INPUT_INFO* b)
 #else
     // use four dimension array output int2e
     double ****e2;
-    e2 = (double****)malloc(sizeof(double***)*basis_count);
-    omp_set_num_threads(2);
-    //#pragma omp parallel for private(j, k, l)
+    e2 = (double****)Malloc(sizeof(double***)*basis_count);
     for (i = 0; i < basis_count; i++) {
         *(e2+i) = (double***)Malloc(sizeof(double**)*basis_count);
         for (j = 0; j < basis_count; j++) {
             *(e2[i]+j) = (double**)Malloc(sizeof(double*)*basis_count);
             for (k = 0; k < basis_count; k++) {
-                *(e2[i][j]+k) = (double*)Malloc(sizeof(double)*basis_count);
+                *(e2[i][j]+k) = (double*)Calloc(sizeof(double), basis_count);
+            }
+        }
+    }
+
+    omp_set_num_threads(2);
+    //#pragma omp parallel for private(j, k, l)
+    for (i = 0; i < basis_count; i++) {
+        for (j = 0; j < basis_count; j++) {
+            for (k = 0; k < basis_count; k++) {
                 for (l = 0; l < basis_count; l++) {
-                    debug = 0;
+                    //debug = 0;
                     //if (i == 0 && j == 2 && k == 0 && l == 2)
                     //    debug = 1;
-                    e2[i][j][k][l] = int2e_basis(&basisSet[i], 
+                    if (e2[i][j][k][l] != 0)
+                        continue;
+                    e2[i][j][k][l] = \
+                    e2[i][j][l][k] = \
+                    e2[j][i][k][l] = \
+                    e2[j][i][l][k] = \
+                    e2[k][l][i][j] = \
+                    e2[k][l][j][i] = \
+                    e2[l][k][i][j] = \
+                    e2[l][k][j][i] = int2e_basis(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
                                                  &basisSet[l], debug);

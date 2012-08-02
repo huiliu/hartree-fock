@@ -13,6 +13,7 @@ double F_inc_gamma(int m ,double w);
 int factorial(int);
 int factorial_2(int);
 void* Malloc(size_t n);
+void* Calloc(size_t s, size_t n);
 
 #define MALLOC(p,n) \
     if (!(p = malloc(n))) { \

@@ -20,6 +20,7 @@ int main(int argc, char** argv)
     n = b->basisCount;
     //printf("Basis Count: %d\n", n);
 
+/*
     gsl_matrix* overlapMatrix = overlap_matrix(b);
     matrix_output(overlapMatrix, n, "OVERLAP INTEGRALS:");
 
@@ -31,6 +32,7 @@ int main(int argc, char** argv)
 
     gsl_matrix* h = hamiltonian(b);
     matrix_output(h, n, "Hamiltonian Matirx:");
+    */
 
 #ifdef __INTEGRAL__INT2E__ONE__
     double *int2e;

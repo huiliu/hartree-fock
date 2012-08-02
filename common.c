@@ -74,3 +74,13 @@ void* Malloc(size_t n)
     }else
         return p;
 }
+
+void* Calloc(size_t s, size_t n)
+{
+    void * p;
+    if (!(p = calloc(s, n))) {
+        printf("Memory Assigement Wrong!\n");
+        exit(EXIT_FAILURE);
+    }else
+        return p;
+}
