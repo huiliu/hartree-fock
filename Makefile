@@ -1,10 +1,10 @@
 # target: [pre]
 # [TAB]  command
 CC = icc
-OPT = -O3 -lm -lgsl -fopenmp
-#OPT = -Wall -g -lm -lgsl -fopenmp -pg
+#OPT = -O3 -lm -lgsl -fopenmp
+OPT = -Wall -g -lm -lgsl -fopenmp -pg
 
-all: hf read2e 2e basis.o overlap.o common.o hamiltonian.o int2e.o int scf
+all: hf basis.o overlap.o common.o hamiltonian.o int2e.o int1e.o eri.o int scf 
 
 common.o: common.c common.h
 	$(CC) common.c -c $(OPT) -o common.o
@@ -27,14 +27,20 @@ overlap.o: overlap.c overlap.h
 hamiltonian.o: hamiltonian.c hamiltonian.h
 	$(CC) hamiltonian.c $(OPT) -c -o hamiltonian.o
 
+int1e.o: int1e.c int1e.h
+	$(CC) int1e.c -c $(OPT) -o int1e.o
+
+eri.o: eri.c eri.h
+	$(CC) eri.c -c $(OPT) -o eri.o
+
 int2e.o: int2e.c int2e.h
 	$(CC) int2e.c -c $(OPT) -o int2e.o
 
-int: int.c common.o basis.o overlap.o hamiltonian.o int2e.o 
-	$(CC) int.c common.o basis.o overlap.o hamiltonian.o int2e.o $(OPT) -o int
+int: int.c common.o basis.o overlap.o hamiltonian.o int1e.o int2e.o eri.o
+	$(CC) int.c common.o basis.o overlap.o hamiltonian.o int1e.o int2e.o eri.o $(OPT) -o int
 
-scf: scf.c scf.h common.o basis.o overlap.o hamiltonian.o int2e.o
-	$(CC) scf.c basis.o overlap.o common.o hamiltonian.o int2e.o $(OPT) -o scf
+scf: scf.c scf.h common.o basis.o overlap.o hamiltonian.o int1e.o int2e.o eri.o
+	$(CC) scf.c basis.o overlap.o common.o hamiltonian.o int2e.o int1e.o eri.o $(OPT) -o scf
 
 clean:
 	rm -rf hf read2e *.o 2e *.mod int scf

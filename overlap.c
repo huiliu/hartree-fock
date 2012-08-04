@@ -26,7 +26,7 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
 
     for (i = down; i <= top; i+=2) {
         sum += (fact_l_lambda(l1, (i + ii)/2) * fact_l_lambda(l2, (ii-i)/2) * \
-                                pow(pax, l1 - (i + ii)/2) * pow(pbx, l2 - (ii-i)/2));
+                gsl_pow_int(pax, l1 - (i + ii)/2) * gsl_pow_int(pbx, l2 - (ii-i)/2));
     }
 
 /*
@@ -165,6 +165,7 @@ double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_
     gsl_vector_free(PB);
     return result;
 }
+
 // 计算两个基函数的重叠积分
 double overlap_basis(const BASIS *b1, const gsl_vector *A,
                       const BASIS *b2, const gsl_vector *B, int debug)

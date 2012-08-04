@@ -311,6 +311,12 @@ INPUT_INFO* parse_input(const char* file_name)
                                     // the basis count of atom
                                     atom->basisCount = 15;
                                     break;
+                                case 17:
+                                    // total basis count
+                                    input_information->basisCount += 19;
+                                    // the basis count of atom
+                                    atom->basisCount = 19;
+                                    break;
                             }
                         }
                         break;

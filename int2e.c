@@ -5,6 +5,7 @@
 #include "overlap.h"
 #include "basis.h"
 #include "int2e.h"
+#include "eri.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_math.h>
 
@@ -212,7 +213,7 @@ double**** int2e_matrix(INPUT_INFO* b)
                 for (l = 0; l < basis_count; l++) {
                     I = i * gsl_pow_3(basis_count) + j * gsl_pow_2(basis_count) + \
                                                             k * basis_count + l;
-                    matrix[I] = int2e_basis(&basisSet[i], 
+                    matrix[I] = int2e_basis(&basisSet[i],
                                             &basisSet[j], 
                                             &basisSet[k], 
                                             &basisSet[l], debug);
@@ -244,7 +245,8 @@ double**** int2e_matrix(INPUT_INFO* b)
                     //debug = 0;
                     //if (i == 0 && j == 2 && k == 0 && l == 2)
                     //    debug = 1;
-                    if (e2[i][j][k][l] != 0)
+                    //if (e2[i][j][k][l] != 0)
+                    if (chkSYM(e2, i, j, k, l))
                         continue;
                     e2[i][j][k][l] = \
                     e2[i][j][l][k] = \
@@ -294,4 +296,18 @@ void int2e_output(double**** e, int n, char* msg)
             }
         }
     }
+}
+
+// check the symtery of two-electron integral
+int chkSYM(double ****e, int i, int j, int k, int l)
+{
+    //if (fabs(e[i][j][k][l]) > 1.0E-10)
+    if (e[i][j][k][l] != 0)
+        return 1;
+    else if (l < k && e[i][j][l][k] == 0) {e[i][j][k][l] == 0; return 1;}
+    else if (j < i && e[j][i][l][k] == 0) {e[i][j][k][l] == 0; return 1;}
+    else if (k < i && l < j && e[k][l][i][j] == 0) {e[i][j][k][l] == 0; return 1;}
+    else if (l < i && k < j && l <= k && e[l][k][i][j] == 0) {e[i][j][k][l] == 0; return 1;}
+    else
+        return 0;
 }
