@@ -93,21 +93,25 @@ double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_
     return result;
 }
 
-double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma)
+double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int debug)
 {
     double norm_2 = 0;
+    double result = 0;
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
         norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
-        return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
+        result = gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
+        if (n == 1 && debug == 5)
+            printf("gamma = %lf\tF_inc_gamma(1, x) = %lf\n",gamma, result);
+        return result;
     }
     if (t > 0)
-        return t * R(n+1, t-2, u, v, PX, gamma) + PX->data[0] * R(n+1, t-1, u, v, PX, gamma);
+        return (t-1) * R(n+1, t-2, u, v, PX, gamma, debug) + PX->data[0] * R(n+1, t-1, u, v, PX, gamma, debug);
     if (u > 0)
-        return u * R(n+1, t, u-2, v, PX, gamma) + PX->data[1] * R(n+1, t, u-1, v, PX, gamma);
+        return (u-1) * R(n+1, t, u-2, v, PX, gamma, debug) + PX->data[1] * R(n+1, t, u-1, v, PX, gamma, debug);
     if (v > 0)
-        return v * R(n+1, t, u, v-2, PX, gamma) + PX->data[2] * R(n+1, t, u, v-1, PX, gamma);
+        return (v-1) * R(n+1, t, u, v-2, PX, gamma, debug) + PX->data[2] * R(n+1, t, u, v-1, PX, gamma, debug);
     return 10;
 
 }
@@ -122,6 +126,7 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     int L, M, N;
     int l1, m1, n1, l2, m2, n2;
     double result = 0;
+    double r = 0;
 
     l1 = g1->l; m1 = g1->m; n1 = g1->n; norm1 = g1->norm; c1 = g1->coeff;
     l2 = g2->l; m2 = g2->m; n2 = g2->n; norm2 = g2->norm; c2 = g2->coeff;
@@ -134,9 +139,10 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
 
     KAB = gauss_K(g1->alpha, A, g2->alpha, B);
 
+    PC = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
+
     PA = gsl_vector_alloc(3);
     PB = gsl_vector_alloc(3);
-    PC = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
     gsl_vector_memcpy(PA, PC);
     gsl_vector_memcpy(PB, PC);
 
@@ -144,13 +150,20 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_sub(PB, B);
     gsl_vector_sub(PC, C);
 
+/*
+    vector_output(PA, 3, "PA:");
+    vector_output(PB, 3, "PB:");
+    vector_output(PC, 3, "PC:");
+*/
+
     for (i = 0; i <= L; i++) {
         Ex = RecCoeff(l1, l2, i, &gamma, PA->data, PB->data);
+        //if (i != 0) printf("Ex %d %d %d %lf %lf\n", l1, l2, i, gamma, Ex);
         for (j = 0; j <= M; j++) {
             Ey = RecCoeff(m1, m2, j, &gamma, PA->data+1, PB->data+1);
             for (k = 0; k <= N; k++) {
                 Ez = RecCoeff(n1, n2, k, &gamma, PA->data+2, PB->data+2);
-                result += Ex * Ey * Ez * R(0, i, j, k, PC, gamma);
+                result += Ex * Ey * Ez * R(0, i, j, k, PC, gamma,debug);
             }
         }
     }

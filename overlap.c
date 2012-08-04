@@ -119,7 +119,7 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
     return center;
 }
 
-double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_vector* B, int debug)
+double overlap_gto_c(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_vector* B, int debug)
 {
     double K, gamma, Ix, Iy, Iz, result = 0;
     double normal1, normal2;

@@ -240,13 +240,12 @@ double* A_iru(int l1, int l2, double Ax, double Bx, double Cx, double gamma, int
     return A;
 }
 
-double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
+double nuclear_elect_attraction_gto_c(const GTO* g1, const gsl_vector* A, \
         const GTO* g2, const gsl_vector* B, const gsl_vector* C, int debug)
 {
 // J. Phys. Soc. Japan, Vol 21, No. 11, 1966
 // Formula  (2.17)
-    int flags = 0;
-    gsl_vector* P = gaussian_product_center(g1->alpha, A, g2->alpha, B, flags);
+    gsl_vector* P = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
     gsl_vector *PA, *PB, *PC;
     double gamma;
     double *Ax, *Ay, *Az;
@@ -367,11 +366,9 @@ gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b)
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
-            /*
-            debug = 0;
-            if ( (i == j) && j == 3)
-                debug = 2;
-            */
+            //debug = 0;
+            //if ( (i == j) && j == 3)
+            //    debug = 3;
             result = nuclear_elect_attraction_basis(&basisSet[i], &basisSet[j],
                             alist, atomCount, debug);
             //result_check = check_nuclear(&basisSet[i], &basisSet[j],
