@@ -4,61 +4,72 @@
 #include "overlap.h"
 #include "common.h"
 
-double RecCoeff(int i, int j, int t, double *alphpP, double *PA, double *PB)
+double RecCoeff(int i, int j, int t, double *gamma, double *PA, double *PB)
 {
+// L. E. McMurchie, R. Davidson J. comp. pyhy. 26, 218 (1978)
+// (2.20)   (2.21)
     double item1, item2, item3;
     if (i == 0 && j == 0 && t == 0) return (double)1.0;
     if (i > 0) {
         if (t < 0) {
             item1 = item2 = 0;
-            if (t+1 < 0)
+            if (t+1 <= 0)
                 return 0;
             else
-                return (t+1) * RecCoeff(i-1, j, t+1, alphpP, PA, PB);
+                return (t+1) * RecCoeff(i-1, j, t+1, gamma, PA, PB);
         }else if (t+1 > i+j) {
             //item3 = 0;
-            if (t > i+j)
+            if (t > i+j || (*PA) == 0)
                 item2 = 0;
             else
-                item2 = (*PA)*RecCoeff(i-1, j, t, alphpP, PA, PB);
+                item2 = (*PA)*RecCoeff(i-1, j, t, gamma, PA, PB);
 
             if (t - 1 > i + j)
                 return 0;
             else
-                item1 = 0.5 / (*alphpP) * RecCoeff(i-1, j, t-1, alphpP, PA, PB);
+                item1 = 0.5 / (*gamma) * RecCoeff(i-1, j, t-1, gamma, PA, PB);
 
             return item2 + item1;
         }
 
-        item1 = 0.5/(*alphpP) * RecCoeff(i-1, j, t-1, alphpP, PA, PB);
-        item2 = (*PA)*RecCoeff(i-1, j, t,  alphpP,PA, PB);
-        item3 = (t+1) * RecCoeff(i-1, j, t+1, alphpP, PA, PB);
+        if ((*PA) == 0) 
+            item2 = 0;
+        else
+            item2 = (*PA)*RecCoeff(i-1, j, t,  gamma,PA, PB);
+        item1 = 0.5/(*gamma) * RecCoeff(i-1, j, t-1, gamma, PA, PB);
+        item3 = (t+1) * RecCoeff(i-1, j, t+1, gamma, PA, PB);
         return item1 + item2 + item3;
     }else if (j > 0) {
         if (t < 0) {
             item1 = item2 = 0;
-            if (t+1 < 0)
+            if (t+1 <= 0)
                 return 0;
             else
-                return (t+1) * RecCoeff(i, j-1, t+1, alphpP, PA, PB);
+                return (t+1) * RecCoeff(i, j-1, t+1, gamma, PA, PB);
         }else if (t+1 > i+j) {
             //item3 = 0;
-            if (t > i+j)
+            if (t > i+j || (*PB) == 0)
                 item2 = 0;
             else
-                item2 = (*PB)*RecCoeff(i, j-1, t, alphpP, PA, PB);
+                item2 = (*PB)*RecCoeff(i, j-1, t, gamma, PA, PB);
             if (t - 1 > i + j)
                 return 0;
             else
-                item1 = 0.5/(*alphpP) * RecCoeff(i, j-1, t-1, alphpP, PA, PB);
+                item1 = 0.5/(*gamma) * RecCoeff(i, j-1, t-1, gamma, PA, PB);
             return item2 + item1;
         }
 
-        item1 = 0.5/(*alphpP) * RecCoeff(i, j-1, t-1, alphpP, PA, PB);
-        item2 = (*PB)*RecCoeff(i, j-1, t, alphpP, PA, PB);
-        item3 = (t+1) * RecCoeff(i, j-1, t+1, alphpP, PA, PB);
+        if ((*PB) == 0) 
+            item2 = 0;
+        else
+            item2 = (*PB)*RecCoeff(i, j-1, t, gamma, PA, PB);
+
+        item1 = 0.5/(*gamma) * RecCoeff(i, j-1, t-1, gamma, PA, PB);
+        item3 = (t+1) * RecCoeff(i, j-1, t+1, gamma, PA, PB);
+
         return item1 + item2 + item3;
     }
+    // i == 0 && j == 0 && t < 0
     return 0;
 }
 
@@ -94,22 +105,47 @@ double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_
 
 double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int debug)
 {
+// L. E. McMurchie, R. Davidson J. comp. pyhy. 26, 218 (1978)
+// (4.6) (4.7) (4.8)
     double norm_2 = 0;
+    double item1 = 0, item2 = 0;
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
         norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
         return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
     }
-    if (t > 0)
-        return (t-1) * R(n+1, t-2, u, v, PX, gamma, debug) + PX->data[0] * R(n+1, t-1, u, v, PX, gamma, debug);
-    if (u > 0)
-        return (u-1) * R(n+1, t, u-2, v, PX, gamma, debug) + PX->data[1] * R(n+1, t, u-1, v, PX, gamma, debug);
-    if (v > 0)
-        return (v-1) * R(n+1, t, u, v-2, PX, gamma, debug) + PX->data[2] * R(n+1, t, u, v-1, PX, gamma, debug);
-
-    return 10;
-
+    if (t > 0) {
+        if (t-1 == 0)
+            item1 = 0;
+        else
+            item1 = (t-1) * R(n+1, t-2, u, v, PX, gamma, debug);
+        if (PX->data[0] == 0)
+            item2 = 0;
+        else
+            item2 = PX->data[0] * R(n+1, t-1, u, v, PX, gamma, debug);
+    }
+    if (u > 0) {
+        if (u - 1 == 0)
+            item1 = 0;
+        else
+            item1 = (u-1) * R(n+1, t, u-2, v, PX, gamma, debug);
+        if (PX->data[1] == 0)
+            item2 = 0;
+        else
+            item2 = PX->data[1] * R(n+1, t, u-1, v, PX, gamma, debug);
+    }
+    if (v > 0) {
+        if (v-1 == 0)
+            item1 = 0;
+        else
+            item1 = (v-1) * R(n+1, t, u, v-2, PX, gamma, debug);
+        if (PX->data[2] == 0)
+            item2 = 0;
+        else
+            item2 = PX->data[2] * R(n+1, t, u, v-1, PX, gamma, debug);
+    }
+    return item1 + item2;
 }
 
 double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
@@ -147,7 +183,6 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
 
     for (i = 0; i <= L; i++) {
         Ex = RecCoeff(l1, l2, i, &gamma, PA->data, PB->data);
-        //if (i != 0) printf("Ex %d %d %d %lf %lf\n", l1, l2, i, gamma, Ex);
         for (j = 0; j <= M; j++) {
             Ey = RecCoeff(m1, m2, j, &gamma, PA->data+1, PB->data+1);
             for (k = 0; k <= N; k++) {

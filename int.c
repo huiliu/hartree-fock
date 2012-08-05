@@ -41,6 +41,6 @@ int main(int argc, char** argv)
 #endif
     int2e = int2e_matrix(b);
     int2e_output(int2e, n, "TWO ELECTRON INTEGRAL:");
-//    test();
+
     return 0;
 }

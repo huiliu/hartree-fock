@@ -15,6 +15,12 @@ int factorial_2(int);
 void* Malloc(size_t n);
 void* Calloc(size_t s, size_t n);
 
+typedef struct {
+    int m;
+    double w;
+    double result;
+}FMW;
+
 #define MALLOC(p,n) \
     if (!(p = malloc(n))) { \
         printf("内存分配错误！\n");\
