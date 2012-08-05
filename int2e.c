@@ -5,7 +5,6 @@
 #include "overlap.h"
 #include "basis.h"
 #include "int2e.h"
-#include "eri.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_math.h>
 
