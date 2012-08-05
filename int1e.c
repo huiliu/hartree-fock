@@ -6,9 +6,8 @@
 
 double RecCoeff(int i, int j, int t, double *alphpP, double *PA, double *PB)
 {
-    double result = 0;
     double item1, item2, item3;
-    if (i == 0 && j == 0 && t == 0) return 1;
+    if (i == 0 && j == 0 && t == 0) return (double)1.0;
     if (i > 0) {
         if (t < 0) {
             item1 = item2 = 0;
@@ -96,15 +95,11 @@ double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_
 double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int debug)
 {
     double norm_2 = 0;
-    double result = 0;
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
         norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
-        result = gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
-        if (n == 1 && debug == 5)
-            printf("gamma = %lf\tF_inc_gamma(1, x) = %lf\n",gamma, result);
-        return result;
+        return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
     }
     if (t > 0)
         return (t-1) * R(n+1, t-2, u, v, PX, gamma, debug) + PX->data[0] * R(n+1, t-1, u, v, PX, gamma, debug);
@@ -112,6 +107,7 @@ double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int deb
         return (u-1) * R(n+1, t, u-2, v, PX, gamma, debug) + PX->data[1] * R(n+1, t, u-1, v, PX, gamma, debug);
     if (v > 0)
         return (v-1) * R(n+1, t, u, v-2, PX, gamma, debug) + PX->data[2] * R(n+1, t, u, v-1, PX, gamma, debug);
+
     return 10;
 
 }
@@ -126,7 +122,6 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     int L, M, N;
     int l1, m1, n1, l2, m2, n2;
     double result = 0;
-    double r = 0;
 
     l1 = g1->l; m1 = g1->m; n1 = g1->n; norm1 = g1->norm; c1 = g1->coeff;
     l2 = g2->l; m2 = g2->m; n2 = g2->n; norm2 = g2->norm; c2 = g2->coeff;
@@ -149,12 +144,6 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_sub(PA, A);
     gsl_vector_sub(PB, B);
     gsl_vector_sub(PC, C);
-
-/*
-    vector_output(PA, 3, "PA:");
-    vector_output(PB, 3, "PB:");
-    vector_output(PC, 3, "PC:");
-*/
 
     for (i = 0; i <= L; i++) {
         Ex = RecCoeff(l1, l2, i, &gamma, PA->data, PB->data);

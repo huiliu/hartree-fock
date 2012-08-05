@@ -40,8 +40,8 @@ double omega(double alpha1, double alpha2, double alpha3, double alpha4,
     double gamma2 = alpha3 + alpha4;
 
     return 2*gsl_pow_2(M_PI)/(gamma1*gamma2) * sqrt(M_PI / (gamma1+gamma2)) * \
-                exp(-alpha1*alpha2 * gsl_pow_2(AB) / gamma1 
-                                       -alpha3*alpha4 * gsl_pow_2(CD) / gamma2);
+                    exp(-alpha1*alpha2 * gsl_pow_2(AB) / gamma1 - 
+                         alpha3*alpha4 * gsl_pow_2(CD) / gamma2);
 }
 
 void Bxyz(int l1, int l2, double PA, double PB, double gamma1, 
@@ -153,6 +153,8 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector_free(PQ);
     gsl_vector_free(P);
     gsl_vector_free(Q);
+    if (debug == 3)
+        printf("===========%lf==========\n", result);
 
     return result;
 }
@@ -162,6 +164,7 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
 {
     int i, j, k, l, gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
     double result = 0;
+    double tmp = 0, tmp1;
 
     gaussCount_1 = b1->gaussCount;
     gaussCount_2 = b2->gaussCount;
@@ -172,11 +175,20 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
         for (j = 0; j < gaussCount_2; j++) {
             for (k = 0; k < gaussCount_3; k++) {
                 for (l = 0; l < gaussCount_4; l++) {
-                    result += int2e_gto(&b1->gaussian[i], b1->xyz,
+                    tmp = ERI_gto(&b1->gaussian[i], b1->xyz,
                                         &b2->gaussian[j], b2->xyz,
                                         &b3->gaussian[k], b3->xyz,
                                         &b4->gaussian[l], b4->xyz,
                                         debug);
+                    result += tmp;
+                    if (debug == 3) {
+                        tmp1 = int2e_gto(&b1->gaussian[i], b1->xyz,
+                                        &b2->gaussian[j], b2->xyz,
+                                        &b3->gaussian[k], b3->xyz,
+                                        &b4->gaussian[l], b4->xyz,
+                                        debug);
+                    }
+
                 }
             }
         }
@@ -242,10 +254,14 @@ double**** int2e_matrix(INPUT_INFO* b)
         for (j = 0; j < basis_count; j++) {
             for (k = 0; k < basis_count; k++) {
                 for (l = 0; l < basis_count; l++) {
-                    //debug = 0;
-                    //if (i == 0 && j == 2 && k == 0 && l == 2)
-                    //    debug = 1;
+                /*
+                    debug = 0;
+                    if (i == 0 && j == 0 && k == 0 && l == 1) {
+                        printf("--- %d %d %d %d ---\n", i, j, k, l);
+                        debug = 3;
+                    }
                     //if (e2[i][j][k][l] != 0)
+                */
                     if (chkSYM(e2, i, j, k, l))
                         continue;
                     e2[i][j][k][l] = \
@@ -304,10 +320,10 @@ int chkSYM(double ****e, int i, int j, int k, int l)
     //if (fabs(e[i][j][k][l]) > 1.0E-10)
     if (e[i][j][k][l] != 0)
         return 1;
-    else if (l < k && e[i][j][l][k] == 0) {e[i][j][k][l] == 0; return 1;}
-    else if (j < i && e[j][i][l][k] == 0) {e[i][j][k][l] == 0; return 1;}
-    else if (k < i && l < j && e[k][l][i][j] == 0) {e[i][j][k][l] == 0; return 1;}
-    else if (l < i && k < j && l <= k && e[l][k][i][j] == 0) {e[i][j][k][l] == 0; return 1;}
+    else if (l < k && e[i][j][l][k] == 0) {e[i][j][k][l] = 0; return 1;}
+    else if (j < i && e[j][i][l][k] == 0) {e[i][j][k][l] = 0; return 1;}
+    else if (k < i && l < j && e[k][l][i][j] == 0) {e[i][j][k][l] = 0; return 1;}
+    else if (l < i && k < j && l <= k && e[l][k][i][j] == 0) {e[i][j][k][l] = 0; return 1;}
     else
         return 0;
 }

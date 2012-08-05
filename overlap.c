@@ -13,7 +13,7 @@ double fact_l_lambda(int l, int lambda)
 
 double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags)
 {
-    int i, j;
+    int i;
     double sum = 0;
 
 // formula come from 
@@ -39,6 +39,7 @@ double fi_l_ll_pax_pbx(int ii, int l1, int l2, double pax, double pbx, int flags
 
 /*
 // 《量子化学》中册 P63 第一个公式
+    int j;
     for (i = 0; i <= l1; i++) {
         for (j = 0; j <= l2; j++) {
             if (i + j == ii) {

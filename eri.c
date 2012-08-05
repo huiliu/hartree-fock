@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "overlap.h"
 #include "int1e.h"
 #include "eri.h"
@@ -14,13 +15,9 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     int L2, M2, N2;
     gsl_vector *PA, *PB, *QC, *QD, *P, *Q, *PQ;
     double alpha1, alpha2, alpha3, alpha4, gamma1, gamma2, finc;
-    double E1x, E1y, E1z, E2x, E2y, E2z;
+    double E1x[10], E1y[10], E1z[10], E2x[10], E2y[10], E2z[10];
+    double KAB, KCD;
     double result = 0;
-
-    //gto_output(g1, 1, "G1:");
-    //gto_output(g2, 1, "G2:");
-    //gto_output(g3, 1, "G3:");
-    //gto_output(g4, 1, "G4:");
 
     alpha1 = g1->alpha;
     alpha2 = g2->alpha;
@@ -39,6 +36,9 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     N1 = n1 + n2;   N2 = n3 + n4;
 
 
+    KAB = gauss_K(g1->alpha, A, g2->alpha, B);
+    KCD = gauss_K(g3->alpha, C, g4->alpha, D);
+
     P = gaussian_product_center(alpha1, A, alpha2, B, debug);
     Q = gaussian_product_center(alpha3, C, alpha4, D, debug);
 
@@ -55,22 +55,27 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector_sub(PQ, Q);
 
     finc = gamma1 * gamma2 / (gamma1 + gamma2);
+        
+    for (i = 0; i <= L1; i++)
+        E1x[i] = RecCoeff(l1, l2, i, &gamma1, PA->data, PB->data);
+    for (j = 0; j <= M1; j++)
+        E1y[j] = RecCoeff(m1, m2, j, &gamma1, PA->data+1, PB->data+1);
+    for (k = 0; k <= N1; k++)
+        E1z[k] = RecCoeff(n1, n2, k, &gamma1, PA->data+2, PB->data+2);
+    for (l = 0; l <= L2; l++)
+        E2x[l] = RecCoeff(l3, l4, l, &gamma2, QC->data, QD->data);
+    for (m = 0; m <= M2; m++)
+        E2y[m] = RecCoeff(m3, m4, m, &gamma2, QC->data+1, QD->data+1);
+    for (n = 0; n <= N2; n++)
+        E2z[n] = RecCoeff(n3, n4, n, &gamma2, QC->data+2, QD->data+2);
 
     for (i = 0; i <= L1; i++) {
-        E1x = RecCoeff(l1, l2, i, &gamma1, PA->data, PB->data);
         for (j = 0; j <= M1; j++) {
-            E1y = RecCoeff(m1, m2, j, &gamma1, PA->data+1, PB->data+1);
             for (k = 0; k <= N1; k++) {
-                E1z = RecCoeff(n1, n2, k, &gamma1, PA->data+2, PB->data+2);
-
     for (l = 0; l <= L2; l++) {
-        E2x = RecCoeff(l3, l4, l, &gamma2, QC->data, QD->data);
         for (m = 0; m <= M2; m++) {
-            E2y = RecCoeff(m3, m4, m, &gamma2, QC->data+1, QD->data+1);
             for (n = 0; n <= N2; n++) {
-                E2z = RecCoeff(n3, n4, n, &gamma2, QC->data+2, QD->data+2);
-
-                result += E1x * E1y * E1z * E2x * E2y * E2z * R(0, i+l, j+m, k+n, PQ, finc); 
+                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * R(0, i+l, j+m, k+n, PQ, finc, debug); 
             }
         }
     }
@@ -86,8 +91,7 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector_free(P);
     gsl_vector_free(Q);
 
-//    printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", g1->norm, g2->norm, g3->norm, g4->norm, g1->coeff, g2->coeff, g3->coeff, g4->coeff, gamma1, gamma2);
-    return result * g1->norm * g2->norm * g3->norm * g4->norm * \
+    return result * KAB * KCD *g1->norm * g2->norm * g3->norm * g4->norm * \
                     g1->coeff * g2->coeff * g3->coeff * g4->coeff \
                     * 2 * pow(M_PI, 2.5) / (gamma1 * gamma2 * sqrt(gamma1 + gamma2));
 }
