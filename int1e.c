@@ -3,6 +3,7 @@
 #include "gsl/gsl_blas.h"
 #include "overlap.h"
 #include "common.h"
+#include "int1e.h"
 
 double RecCoeff(int i, int j, int t, double *gamma, double *PA, double *PB)
 {
@@ -103,53 +104,69 @@ double overlap_gto(const GTO* g1, const gsl_vector* A, const GTO* g2, const gsl_
     return result;
 }
 
-double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int debug)
+double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, F_INC_GAMMA *f, int debug)
 {
 // L. E. McMurchie, R. Davidson J. comp. pyhy. 26, 218 (1978)
 // (4.6) (4.7) (4.8)
     double norm_2 = 0;
     double item1 = 0, item2 = 0;
+    int i;
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
         norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
-        return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
+        if (!f) item1 = -1;
+        else item1 = Search_F_inc(n, gamma*norm_2, f);
+
+        if (item1 >= 0) return item1;
+        else {
+            item1 = F_inc_gamma(n, gamma*norm_2);
+
+            f->count++;
+            f->F = realloc(f->F, f->count*sizeof(FMW));
+            i = f->count - 1;
+            f->F[i].m = n;
+            f->F[i].w = norm_2;
+            f->F[i].result = item1;
+
+            return gsl_pow_int(-2*gamma, n) * item1;
+        }
     }
     if (t > 0) {
         if (t-1 == 0)
             item1 = 0;
         else
-            item1 = (t-1) * R(n+1, t-2, u, v, PX, gamma, debug);
+            item1 = (t-1) * R(n+1, t-2, u, v, PX, gamma, f, debug);
         if (PX->data[0] == 0)
             item2 = 0;
         else
-            item2 = PX->data[0] * R(n+1, t-1, u, v, PX, gamma, debug);
+            item2 = PX->data[0] * R(n+1, t-1, u, v, PX, gamma, f, debug);
     }
     if (u > 0) {
         if (u - 1 == 0)
             item1 = 0;
         else
-            item1 = (u-1) * R(n+1, t, u-2, v, PX, gamma, debug);
+            item1 = (u-1) * R(n+1, t, u-2, v, PX, gamma, f, debug);
         if (PX->data[1] == 0)
             item2 = 0;
         else
-            item2 = PX->data[1] * R(n+1, t, u-1, v, PX, gamma, debug);
+            item2 = PX->data[1] * R(n+1, t, u-1, v, PX, gamma, f, debug);
     }
     if (v > 0) {
         if (v-1 == 0)
             item1 = 0;
         else
-            item1 = (v-1) * R(n+1, t, u, v-2, PX, gamma, debug);
+            item1 = (v-1) * R(n+1, t, u, v-2, PX, gamma, f, debug);
         if (PX->data[2] == 0)
             item2 = 0;
         else
-            item2 = PX->data[2] * R(n+1, t, u, v-1, PX, gamma, debug);
+            item2 = PX->data[2] * R(n+1, t, u, v-1, PX, gamma, f, debug);
     }
     return item1 + item2;
 }
 
 double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
-        const GTO* g2, const gsl_vector* B, const gsl_vector* C, int debug)
+        const GTO* g2, const gsl_vector* B, const gsl_vector* C, F_INC_GAMMA * figList, int debug)
 {
     int i, j, k;
     gsl_vector *PC, *PA, *PB;
@@ -187,7 +204,7 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
             Ey = RecCoeff(m1, m2, j, &gamma, PA->data+1, PB->data+1);
             for (k = 0; k <= N; k++) {
                 Ez = RecCoeff(n1, n2, k, &gamma, PA->data+2, PB->data+2);
-                result += Ex * Ey * Ez * R(0, i, j, k, PC, gamma,debug);
+                result += Ex * Ey * Ez * R(0, i, j, k, PC, gamma, figList, debug);
             }
         }
     }
@@ -195,4 +212,28 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_free(PB);
     gsl_vector_free(PC);
     return result * norm1 * norm2 * c1 * c2 * KAB * 2 * M_PI /gamma;
+}
+
+#define F_INC_GAMMA_THRESOLD    1.0E-5
+double Search_F_inc(int m, double w, F_INC_GAMMA *f)
+{
+    int i;
+    FMW * fmw;
+
+    for (i = 0; i < f->count; i++) {
+        fmw = f->F + i;
+        if (m == fmw->m && fabs(w - fmw->w) < F_INC_GAMMA_THRESOLD)
+            return fmw->result;
+    }
+    return -1.0;
+}
+
+void test(F_INC_GAMMA *f)
+{
+    f->F = realloc(f->F, sizeof(FMW)*(f->count+1));
+    f->count++;
+    f->F[f->count].m = 1;
+    f->F[f->count].w = M_PI;
+    f->F[f->count].result = 1.9845;
+    printf("%d m = %d, w = %lf, result = %lf\n", f->count, f->F[f->count].m, f->F[f->count].w, f->F[f->count].result );
 }

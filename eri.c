@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "overlap.h"
-#include "int1e.h"
 #include "eri.h"
+#include "int1e.h"
 
 double ERI_gto(const GTO* g1, const gsl_vector* A, 
                               const GTO* g2, const gsl_vector* B,
@@ -75,7 +75,7 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     for (l = 0; l <= L2; l++) {
         for (m = 0; m <= M2; m++) {
             for (n = 0; n <= N2; n++) {
-                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * R(0, i+l, j+m, k+n, PQ, finc, debug); 
+                //result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * R(0, i+l, j+m, k+n, PQ, finc, debug); 
             }
         }
     }

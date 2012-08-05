@@ -5,6 +5,18 @@
 
 #ifndef __INTEGRAL__COMMON__
 #define __INTEGRAL__COMMON__
+
+typedef struct {
+    int m;
+    double w;
+    double result;
+}FMW;
+
+typedef struct {
+    int count;
+    FMW *F;
+}F_INC_GAMMA;
+
 // 以更好的格式输出矩阵
 void matrix_output(const gsl_matrix *, int , char *);
 // 以更好的格式输出向量
@@ -15,21 +27,21 @@ int factorial_2(int);
 void* Malloc(size_t n);
 void* Calloc(size_t s, size_t n);
 
-typedef struct {
-    int m;
-    double w;
-    double result;
-}FMW;
-
 #define MALLOC(p,n) \
     if (!(p = malloc(n))) { \
-        printf("内存分配错误！\n");\
+        printf("内存分配错误！malloc!\n");\
         exit(EXIT_FAILURE);\
     }
 
 #define CALLOC(p,n,s) \
     if (!(p = calloc(n, s))) { \
-        printf("内存分配错误！\n");\
+        printf("内存分配错误！calloc!\n");\
+        exit(EXIT_FAILURE);\
+    }
+
+#define REALLOC(p,n) \
+    if (!(p = realloc(p, n))) { \
+        printf("内存分配错误！ Realloc!\n");\
         exit(EXIT_FAILURE);\
     }
 

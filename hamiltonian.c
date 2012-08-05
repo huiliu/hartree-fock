@@ -5,6 +5,7 @@
 #include "overlap.h"
 #include "hamiltonian.h"
 #include "ints.h"
+#include "int1e.h"
 
 
 double kinetic_I_xyz(const GTO* g1, const gsl_vector* A, 
@@ -307,7 +308,7 @@ if (debug == 2) {
 
 // compute the nuclear-electrics attraction integrals of one basis
 double nuclear_elect_attraction_basis(const BASIS* b1, const BASIS* b2, 
-                                ATOM_INFO **atomList, int atomCount, int debug)
+                                ATOM_INFO **atomList, int atomCount, F_INC_GAMMA *figList, int debug)
 {
     int i, j ,s;
     int gaussCount_1, gaussCount_2;
@@ -329,7 +330,7 @@ if (debug == 2) {
                 result += nuclear_elect_attraction_gto(
                     &b1->gaussian[i], b1->xyz, 
                     &b2->gaussian[j], b2->xyz, 
-                    atom->coordination, debug) * atom->n;
+                    atom->coordination, figList, debug) * atom->n;
             }
 if (debug == 2) {
     printf("===============gauss i = %d j = %d================\n", i, j);
@@ -363,6 +364,8 @@ gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b)
 
     //atom_output((const ATOM_INFO **)alist, b->atomCount);
     //basis_set_output(b->basisSet, b->basisCount, "BASIS");
+    F_INC_GAMMA *f_inc_gamma;
+    CALLOC(f_inc_gamma, sizeof(F_INC_GAMMA),1);
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
@@ -370,7 +373,7 @@ gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b)
             //if ( (i == j) && j == 3)
             //    debug = 3;
             result = nuclear_elect_attraction_basis(&basisSet[i], &basisSet[j],
-                            alist, atomCount, debug);
+                            alist, atomCount, f_inc_gamma, debug);
             //result_check = check_nuclear(&basisSet[i], &basisSet[j],
             //                alist, atomCount);
             // 设定一个阀值，如果积分值小于某个数就舍去

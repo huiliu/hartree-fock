@@ -248,7 +248,7 @@ double**** int2e_matrix(INPUT_INFO* b)
         }
     }
 
-    omp_set_num_threads(2);
+    //omp_set_num_threads(2);
     //#pragma omp parallel for private(j, k, l)
     for (i = 0; i < basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
