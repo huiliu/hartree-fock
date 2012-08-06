@@ -114,7 +114,7 @@ double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int deb
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
         norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX)) * gamma;
-        if (norm_2 < 1.0E-8) norm_2 = 0;
+        //if (norm_2 < 1.0E-8) norm_2 = 0;
         return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, norm_2);
     }
     if (t > 0) {

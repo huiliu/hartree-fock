@@ -16,6 +16,7 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector *PA, *PB, *QC, *QD, *P, *Q, *PQ;
     double alpha1, alpha2, alpha3, alpha4, gamma1, gamma2, finc;
     double E1x[10], E1y[10], E1z[10], E2x[10], E2y[10], E2z[10];
+    double RR[20][20][20];
     double KAB, KCD;
     double result = 0;
 
@@ -36,8 +37,8 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     N1 = n1 + n2;   N2 = n3 + n4;
 
 
-    KAB = gauss_K(g1->alpha, A, g2->alpha, B);
-    KCD = gauss_K(g3->alpha, C, g4->alpha, D);
+    KAB = gauss_K(alpha1, A, alpha2, B);
+    KCD = gauss_K(alpha3, C, alpha4, D);
 
     PQ = gaussian_product_center(alpha1, A, alpha2, B, debug);
     Q = gaussian_product_center(alpha3, C, alpha4, D, debug);
@@ -67,13 +68,20 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     for (n = 0; n <= N2; n++)
         E2z[n] = RecCoeff(n3, n4, n, &gamma2, QC->data+2, QD->data+2);
 
+    for (i = 0; i <= L1+L2; i++) {
+        for (j = 0; j <= M1+M2; j++) {
+            for (k = 0; k <= N1+N2; k++) {
+                RR[i][j][k] = R(0, i, j, k, PQ, finc, debug); 
+            }
+        }
+    }
     for (i = 0; i <= L1; i++) {
         for (j = 0; j <= M1; j++) {
             for (k = 0; k <= N1; k++) {
     for (l = 0; l <= L2; l++) {
         for (m = 0; m <= M2; m++) {
             for (n = 0; n <= N2; n++) {
-                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * R(0, i+l, j+m, k+n, PQ, finc, debug); 
+                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * RR[i+l][j+m][k+n];
             }
         }
     }
