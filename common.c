@@ -32,7 +32,7 @@ double F_inc_gamma(int m ,double w)
 {
     double result = 0;
     double tmp = 0;
-    int i;
+    register int i;
     
     if (w < 17) {
         result = tmp = 1.0 / factorial_2(2*m + 1);
@@ -51,18 +51,29 @@ double F_inc_gamma(int m ,double w)
 int factorial(int n)
 {
     if (n <= 1) return 1;
+    register int i = n;
+    register int result = 1;
 
-    return n*factorial(n-1);
+    for (; i > 0; i--)
+        result *= i;
+    return result;
 }
 
 int factorial_2(int n)
 {
-    if (n % 2 == 0) {
-        if (n <= 2) return 2;
+    register int i = n;
+    register int result = 1;
+
+    if (i % 2 == 0) {
+        if (i <= 2) return 2;
     }else{
-        if (n <= 1) return 1;
+        if (i <= 1) return 1;
     }
-    return n * factorial_2(n-2);
+
+    for (; i > 0; i -= 2) {
+        result *= i;
+    }
+    return result;
 }
 
 void* Malloc(size_t n)
