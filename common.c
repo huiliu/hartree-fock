@@ -1,5 +1,6 @@
 #include "common.h"
 #include <math.h>
+#include <gsl/gsl_math.h>
 
 /*
  *  放置一些常用函数
@@ -33,8 +34,13 @@ double F_inc_gamma(int m ,double w)
     double result = 0;
     double tmp = 0;
     register int i;
-    
+
     if (w < 17) {
+        if (m == 0 && w == 0)  return 1.0;
+        if (w == m) {
+            tmp = sqrt(w);
+            return M_SQRTPI * gsl_sf_erf(tmp) / (2 *tmp);
+        }
         result = tmp = 1.0 / factorial_2(2*m + 1);
         for (i = 1; i < F_INC_GAMMA_CYCLE; i++) {
             tmp *= ((2*w) / (2*m + 2*i + 1));
@@ -45,6 +51,11 @@ double F_inc_gamma(int m ,double w)
         return result * factorial_2(2 * m -1) * exp(-w);;
     }else
         result = factorial_2(2*m -1) / pow(2*w, m + 0.5) * sqrt(M_PI_2);
+        /*
+    FILE *f = fopen("/tmp/f_inc", "a");
+    fprintf(f, "%d\t%lf\t%lf\n", m, w, result);
+    fclose(f);
+    */
     return result;
 }
 

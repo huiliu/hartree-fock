@@ -39,16 +39,14 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     KAB = gauss_K(g1->alpha, A, g2->alpha, B);
     KCD = gauss_K(g3->alpha, C, g4->alpha, D);
 
-    P = gaussian_product_center(alpha1, A, alpha2, B, debug);
+    PQ = gaussian_product_center(alpha1, A, alpha2, B, debug);
     Q = gaussian_product_center(alpha3, C, alpha4, D, debug);
 
     PA = gsl_vector_alloc(3); PB = gsl_vector_alloc(3);
     QC = gsl_vector_alloc(3); QD = gsl_vector_alloc(3);
-    PQ = gsl_vector_alloc(3);
 
-    gsl_vector_memcpy(PA, P); gsl_vector_memcpy(PB, P);
+    gsl_vector_memcpy(PA, PQ); gsl_vector_memcpy(PB, PQ);
     gsl_vector_memcpy(QC, Q); gsl_vector_memcpy(QD, Q);
-    gsl_vector_memcpy(PQ, P);
 
     gsl_vector_sub(PA, A); gsl_vector_sub(PB, B);
     gsl_vector_sub(QC, C); gsl_vector_sub(QD, D);
@@ -88,7 +86,6 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     gsl_vector_free(PB);
     gsl_vector_free(QC);
     gsl_vector_free(QD);
-    gsl_vector_free(P);
     gsl_vector_free(Q);
 
     return result * KAB * KCD *g1->norm * g2->norm * g3->norm * g4->norm * \

@@ -9,7 +9,7 @@ double RecCoeff(int i, int j, int t, double *gamma, double *PA, double *PB)
 // L. E. McMurchie, R. Davidson J. comp. pyhy. 26, 218 (1978)
 // (2.20)   (2.21)
     double item1, item2, item3;
-    if (i == 0 && j == 0 && t == 0) return (double)1.0;
+    if (i == 0 && j == 0 && t == 0) return 1.0;
     if (i > 0) {
         if (t < 0) {
             item1 = item2 = 0;
@@ -36,6 +36,7 @@ double RecCoeff(int i, int j, int t, double *gamma, double *PA, double *PB)
             item2 = 0;
         else
             item2 = (*PA)*RecCoeff(i-1, j, t,  gamma,PA, PB);
+
         item1 = 0.5/(*gamma) * RecCoeff(i-1, j, t-1, gamma, PA, PB);
         item3 = (t+1) * RecCoeff(i-1, j, t+1, gamma, PA, PB);
         return item1 + item2 + item3;
@@ -112,8 +113,9 @@ double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, int deb
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
-        norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
-        return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, gamma*norm_2);
+        norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX)) * gamma;
+        if (norm_2 < 1.0E-8) norm_2 = 0;
+        return gsl_pow_int(-2*gamma, n) * F_inc_gamma(n, norm_2);
     }
     if (t > 0) {
         if (t-1 == 0)
