@@ -160,7 +160,8 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
 }
 
 double int2e_basis(const BASIS* b1, const BASIS* b2,
-                   const BASIS* b3, const BASIS* b4, int debug)
+                   const BASIS* b3, const BASIS* b4,
+                   F_INC_GAMMA *figList, int debug)
 {
     int i, j, k, l, gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
     double result = 0;
@@ -179,7 +180,7 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
                                         &b2->gaussian[j], b2->xyz,
                                         &b3->gaussian[k], b3->xyz,
                                         &b4->gaussian[l], b4->xyz,
-                                        debug);
+                                        figList, debug);
                     result += tmp;
                     if (debug == 3) {
                         tmp1 = int2e_gto(&b1->gaussian[i], b1->xyz,
@@ -214,6 +215,9 @@ double**** int2e_matrix(INPUT_INFO* b)
     basisSet = b->basisSet;
     atomCount = b->atomCount;
 
+    F_INC_GAMMA *figList;
+    CALLOC(figList, sizeof(F_INC_GAMMA),1);
+
 #ifdef __INTEGRAL__INT2E__ONE__
     // use one dimension array output int2e
     double *matrix;
@@ -228,7 +232,7 @@ double**** int2e_matrix(INPUT_INFO* b)
                     matrix[I] = int2e_basis(&basisSet[i],
                                             &basisSet[j], 
                                             &basisSet[k], 
-                                            &basisSet[l], debug);
+                                            &basisSet[l], figList, debug);
                 }
             }
         }
@@ -274,7 +278,7 @@ double**** int2e_matrix(INPUT_INFO* b)
                     e2[l][k][j][i] = int2e_basis(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
-                                                 &basisSet[l], debug);
+                                                 &basisSet[l], figList, debug);
                 }
             }
         }

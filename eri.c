@@ -7,7 +7,8 @@
 double ERI_gto(const GTO* g1, const gsl_vector* A, 
                               const GTO* g2, const gsl_vector* B,
                               const GTO* g3, const gsl_vector* C,
-                              const GTO* g4, const gsl_vector* D, int debug)
+                              const GTO* g4, const gsl_vector* D,
+                              F_INC_GAMMA *figList, int debug)
 {
     int i, j, k, l, m, n;
     int l1, m1, n1, l2, m2, n2, l3, m3, n3, l4, m4, n4;
@@ -75,7 +76,7 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     for (l = 0; l <= L2; l++) {
         for (m = 0; m <= M2; m++) {
             for (n = 0; n <= N2; n++) {
-                //result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * R(0, i+l, j+m, k+n, PQ, finc, debug); 
+                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * R(0, i+l, j+m, k+n, PQ, finc, figList, debug); 
             }
         }
     }
