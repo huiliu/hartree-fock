@@ -109,26 +109,37 @@ double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, F_INC_G
 // L. E. McMurchie, R. Davidson J. comp. pyhy. 26, 218 (1978)
 // (4.6) (4.7) (4.8)
     double norm_2 = 0;
+    double finc = 0;
     double item1 = 0, item2 = 0;
     int i;
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
         norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
-        if (!f) item1 = -1;
-        else item1 = Search_F_inc(n, gamma*norm_2, f);
-
-        if (item1 >= 0) return item1;
+        finc = norm_2 * gamma;
+        if (finc < 1.0E-10) finc = 0;
+        item2 = F_inc_gamma(n, finc);
+        //return gsl_pow_int(-2*gamma, n) * item1;
+        if (!f || n > 17)
+            item1 = -1;
         else {
-            item1 = F_inc_gamma(n, gamma*norm_2);
+            item1 = Search_F_inc(n, finc, f);
+        }
 
+        if (item1 >= 0) {
+            if (debug == 3) fprintf(stdout, "F_INC: %12.7lf%12.7lf\n", item1, item2);
+            return gsl_pow_int(-2*gamma, n) * item1;
+        }else {
+            item1 = F_inc_gamma(n, finc);
+// 将f->F改为二级指针,指向一个包含w, result的结构体，用n作为第一级走标
             f->count++;
             f->F = realloc(f->F, f->count*sizeof(FMW));
             i = f->count - 1;
             f->F[i].m = n;
             f->F[i].w = norm_2;
-            f->F[i].result = item1;
+            f->F[i].value = item1;
 
+            if (debug == 3) fprintf(stdout, "F_INC: %12.7lf%12.7lf\n", item1, item2);
             return gsl_pow_int(-2*gamma, n) * item1;
         }
     }
@@ -198,13 +209,23 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     gsl_vector_sub(PB, B);
     gsl_vector_sub(PC, C);
 
+    double r;
     for (i = 0; i <= L; i++) {
         Ex = RecCoeff(l1, l2, i, &gamma, PA->data, PB->data);
         for (j = 0; j <= M; j++) {
             Ey = RecCoeff(m1, m2, j, &gamma, PA->data+1, PB->data+1);
             for (k = 0; k <= N; k++) {
                 Ez = RecCoeff(n1, n2, k, &gamma, PA->data+2, PB->data+2);
-                result += Ex * Ey * Ez * R(0, i, j, k, PC, gamma, figList, debug);
+                r = R(0, i, j, k, PC, gamma, figList, debug);
+                result += Ex * Ey * Ez * r;
+                if (debug == 33) {
+                    gto_output(g1, 1, "G1");
+                    gto_output(g2, 1, "G2");
+                    vector_output(A, 3, "A:");
+                    vector_output(B, 3, "B:");
+                    vector_output(C, 3, "C:");
+                    printf("%lf %lf %lf %lf\n", Ex, Ey, Ez, r);
+                }
             }
         }
     }
@@ -214,16 +235,18 @@ double nuclear_elect_attraction_gto(const GTO* g1, const gsl_vector* A, \
     return result * norm1 * norm2 * c1 * c2 * KAB * 2 * M_PI /gamma;
 }
 
-#define F_INC_GAMMA_THRESOLD    1.0E-5
+#define F_INC_GAMMA_THRESOLD    1.0E-8
 double Search_F_inc(int m, double w, F_INC_GAMMA *f)
 {
     int i;
     FMW * fmw;
 
+    //fprintf(stdout, "Count %d\n", f->count);
     for (i = 0; i < f->count; i++) {
         fmw = f->F + i;
-        if (m == fmw->m && fabs(w - fmw->w) < F_INC_GAMMA_THRESOLD)
-            return fmw->result;
+        //if (m == fmw->m && fabs(w - fmw->w) < F_INC_GAMMA_THRESOLD)
+        if (m == fmw->m && w == fmw->w)
+            return fmw->value;
     }
     return -1.0;
 }
@@ -234,6 +257,6 @@ void test(F_INC_GAMMA *f)
     f->count++;
     f->F[f->count].m = 1;
     f->F[f->count].w = M_PI;
-    f->F[f->count].result = 1.9845;
-    printf("%d m = %d, w = %lf, result = %lf\n", f->count, f->F[f->count].m, f->F[f->count].w, f->F[f->count].result );
+    f->F[f->count].value = 1.9845;
+    printf("%d m = %d, w = %lf, result = %lf\n", f->count, f->F[f->count].m, f->F[f->count].w, f->F[f->count].value );
 }

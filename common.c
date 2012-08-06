@@ -34,6 +34,7 @@ double F_inc_gamma(int m ,double w)
     double tmp = 0;
     int i;
     
+    if (m == 0 && w == 0)   return 0;
     if (w < 17) {
         result = tmp = 1.0 / factorial_2(2*m + 1);
         for (i = 1; i < F_INC_GAMMA_CYCLE; i++) {

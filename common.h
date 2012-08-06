@@ -6,12 +6,30 @@
 #ifndef __INTEGRAL__COMMON__
 #define __INTEGRAL__COMMON__
 
+/* -------------------------
+store F_inc_gamma(m, w)
+-------------------------*/
+/*
+typedef struct {
+    int count;
+    FM *FM;
+}F_INC_GAMMA;
+
+typedef struct {
+    int count;
+    FMW *fmw;
+}FM;
+
+typedef struct {
+    double w;
+    double value;
+}FMW;
+*/
 typedef struct {
     int m;
     double w;
-    double result;
+    double value;
 }FMW;
-
 typedef struct {
     int count;
     FMW *F;

@@ -22,7 +22,8 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
                  const GTO* g3, const gsl_vector* C,
                  const GTO* g4, const gsl_vector* D, int debug);
 double int2e_basis(const BASIS* b1, const BASIS* b2,
-                   const BASIS* b3, const BASIS* b4, int debug);
+                   const BASIS* b3, const BASIS* b4,
+                   F_INC_GAMMA *, int debug);
 
 #ifdef __INTEGRAL__INT2E__ONE__
 double* int2e_matrix(INPUT_INFO* b);

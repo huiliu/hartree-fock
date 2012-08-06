@@ -323,14 +323,28 @@ if (debug == 2) {
     basis_set_output(b1, 1, "b1:");
     basis_set_output(b2, 1, "b2:");
 }
+    double t1 = 0, t2 = 0;
     for (i = 0; i < gaussCount_1; i++) {
         for (j = 0; j < gaussCount_2; j++) {
             for (s = 0; s < atomCount; s++) {
                 atom = atomList[s];
-                result += nuclear_elect_attraction_gto(
+                t1 = nuclear_elect_attraction_gto(
                     &b1->gaussian[i], b1->xyz, 
                     &b2->gaussian[j], b2->xyz, 
-                    atom->coordination, figList, debug) * atom->n;
+                    atom->coordination, figList, debug);
+                if (debug == 33) {
+                    t2 = nuclear_elect_attraction_gto_c(
+                        &b1->gaussian[i], b1->xyz, 
+                        &b2->gaussian[j], b2->xyz, 
+                        atom->coordination, debug);
+
+                        gto_output(&b1->gaussian[i], 1, "GA:");
+                        gto_output(&b2->gaussian[j], 1, "GB:");
+                        fprintf(stdout, "---- ----- ----- ----- -----\n");
+                        fprintf(stdout, "%12.6lf %12.6lf\n", t1, t2);
+                        fprintf(stdout, "---- ----- ----- ----- -----\n");
+                }
+                result += t1 * atom->n;
             }
 if (debug == 2) {
     printf("===============gauss i = %d j = %d================\n", i, j);
@@ -369,9 +383,9 @@ gsl_matrix* nuclear_attraction_matrix(INPUT_INFO* b)
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
-            //debug = 0;
-            //if ( (i == j) && j == 3)
-            //    debug = 3;
+            debug = 0;
+            if ( (i == j) && j == 4)
+                debug = 3;
             result = nuclear_elect_attraction_basis(&basisSet[i], &basisSet[j],
                             alist, atomCount, f_inc_gamma, debug);
             //result_check = check_nuclear(&basisSet[i], &basisSet[j],
