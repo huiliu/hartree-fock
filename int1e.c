@@ -108,25 +108,27 @@ double R(int n, int t, int u, int v, const gsl_vector *PX, double gamma, F_INC_G
 {
 // L. E. McMurchie, R. Davidson J. comp. pyhy. 26, 218 (1978)
 // (4.6) (4.7) (4.8)
-    double norm_2 = 0;
+    double finc = 0;
     double item1 = 0, item2 = 0;
     int i;
 
     if (t < 0 || u < 0 || v < 0)    return 0;
     if (t == 0 && u == 0 && v == 0) {
-        norm_2 =  gsl_pow_2(gsl_blas_dnrm2(PX));
-        if (!f) item1 = -1;
-        else item1 = Search_F_inc(n, gamma*norm_2, f);
+        finc =  gsl_pow_2(gsl_blas_dnrm2(PX))*gamma;
+        if (finc < 1.0E-8)  finc = 0;
+        if (!f || n > 17) item1 = -1;
+        else item1 = Search_F_inc(n, finc, f);
 
-        if (item1 >= 0) return item1;
+        if (item1 >= 0) 
+            return gsl_pow_int(-2*gamma, n) * item1;
         else {
-            item1 = F_inc_gamma(n, gamma*norm_2);
+            item1 = F_inc_gamma(n, finc);
 
             f->count++;
             f->F = realloc(f->F, f->count*sizeof(FMW));
             i = f->count - 1;
             f->F[i].m = n;
-            f->F[i].w = norm_2;
+            f->F[i].w = finc;
             f->F[i].result = item1;
 
             return gsl_pow_int(-2*gamma, n) * item1;
