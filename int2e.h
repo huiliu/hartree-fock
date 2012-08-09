@@ -20,16 +20,18 @@ void Bxyz(int l1, int l2, double PA, double PB, double gamma1,
 double int2e_gto(const GTO* g1, const gsl_vector* A, 
                  const GTO* g2, const gsl_vector* B,
                  const GTO* g3, const gsl_vector* C,
-                 const GTO* g4, const gsl_vector* D, int debug);
+                 const GTO* g4, const gsl_vector* D,
+                 FMW *,int debug);
 double int2e_basis(const BASIS* b1, const BASIS* b2,
-                   const BASIS* b3, const BASIS* b4, int debug);
+                   const BASIS* b3, const BASIS* b4,
+                   FMW *,int debug);
 
 #ifdef __INTEGRAL__INT2E__ONE__
-double* int2e_matrix(INPUT_INFO* b);
-void int2e_output(double* e, int n, char* msg);
+double* int2e_matrix(INPUT_INFO*, FMW*);
+void int2e_output(double* e, int n, char*,char* );
 #else
-double**** int2e_matrix(INPUT_INFO* b);
-void int2e_output(double**** e, int n, char* msg);
+double**** int2e_matrix(INPUT_INFO*, FMW*);
+void int2e_output(double**** e, int n, char*,char* );
 #endif
 
 int chkSYM(double ****e, int i, int j, int k, int l);

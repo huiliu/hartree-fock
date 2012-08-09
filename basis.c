@@ -121,7 +121,7 @@ void basis_set_output(const BASIS* b, int count, char* msg)
     int i;
     printf("%s\n", msg);
     for (i = 0; i < count; i++) {
-        vector_output(b[i].xyz, 3, "基组坐标:");
+        vector_output(b[i].xyz, 3, "基组坐标:", NULL);
         gto_output(b[i].gaussian, b[i].gaussCount, "基函数");
     }
 }

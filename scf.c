@@ -39,23 +39,34 @@ void HartreeFock(char* fname, char* coeffFile)
     double** Density;
     INPUT_INFO *b;
 
+    FMW *fmw;
+#ifdef ERI_INT_USE_REDBLACK_TREE
+    MALLOC(fmw, sizeof(FMW));
+    CALLOC(fmw->RBList, sizeof(struct rbtree), 36);
+    fmw->count = 36;
+    for (i = 0; i < fmw->count; i++)
+        fmw->RBList[i] = *rbinit(compare, NULL);
+#else
+    fmw = NULL;
+#endif
+
     b = parse_input(fname);
 
     n = b->basisCount;
     //printf("TOTAL ELECTRON: %d\n", b->eCount);
     gsl_matrix* S = overlap_matrix(b);
-    gsl_matrix* H = hamiltonian(b);
+    gsl_matrix* H = hamiltonian(b, fmw);
 #ifdef __INTEGRAL__INT2E__ONE__
     double *int2e;
 #else
     double ****int2e;
 #endif
-    int2e = int2e_matrix(b);
+    int2e = int2e_matrix(b, fmw);
 
 // ---------- READ COEFF DATA FROM FILE --------
-    Density = (double**)malloc(sizeof(double*)*n);
+    Density = (double**)calloc(sizeof(double*),n);
     for (i = 0; i < n; i++)
-        *(Density+i) = malloc(sizeof(double)*n);
+        *(Density+i) = calloc(sizeof(double),n);
 
     char *file_coeff = "coeff";
     gsl_matrix *coeff  = gsl_matrix_alloc(n, n);
@@ -71,10 +82,11 @@ void HartreeFock(char* fname, char* coeffFile)
 // -----------------END --------------------
 
     i = 0;
-    int itmax = 200;
+    int itmax = 20;
 
     double energy, old_energy = 0.0;
 
+// ------------------ Hartree-Fock SCF -------------------
     for (i = 0; i < itmax; i++) {
         printf("\niter %d\n", i);
         //计算密度矩阵
@@ -93,6 +105,7 @@ void HartreeFock(char* fname, char* coeffFile)
         else
             old_energy = energy;
     }
+// ------------------ END SCF ------------------
 }
 void density(double **Density, gsl_matrix* coef, int e, int n)
 {
@@ -141,7 +154,7 @@ gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
     //gsl_eigen_symmv_sort(eigValue, eigVector, GSL_EIGEN_SORT_VAL_DESC);
     *energy = gsl_vector_min(eigValue);
 
-    vector_output(eigValue, n, "FOCK本征值为:");
+    vector_output(eigValue, n, "FOCK本征值为:", NULL);
 #ifdef DEBUG_SCF
     matrix_output(eigVector, n,  "FOCK本征矢量为:");
     matrix_output(s_root, n, "SQRT of Overlap:");

@@ -69,7 +69,8 @@ void Bxyz(int l1, int l2, double PA, double PB, double gamma1,
 double int2e_gto(const GTO* g1, const gsl_vector* A, 
                               const GTO* g2, const gsl_vector* B,
                               const GTO* g3, const gsl_vector* C,
-                              const GTO* g4, const gsl_vector* D, int debug)
+                              const GTO* g4, const gsl_vector* D,
+                              FMW *fmw, int debug)
 {
     int i, j, k;
     int L, M, N;
@@ -135,7 +136,8 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
             for (k = 0; k <= N; k++) {
                 if (debug == 1)
                     printf("%12.6lf%12.6lf%12.6lf %d %d %d\n", Bx[i], By[j], Bz[k], g4->l, g4->m, g4->n);
-                result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, finc);
+                // TODO LIST:
+                result += Bx[i] * By[j] * Bz[k] * F_inc_gamma(i+j+k, finc, &fmw->RBList[i+j+k]);
             }
         }
     }
@@ -160,7 +162,8 @@ double int2e_gto(const GTO* g1, const gsl_vector* A,
 }
 
 double int2e_basis(const BASIS* b1, const BASIS* b2,
-                   const BASIS* b3, const BASIS* b4, int debug)
+                   const BASIS* b3, const BASIS* b4,
+                   FMW *fmw, int debug)
 {
     int i, j, k, l, gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
     double result = 0;
@@ -179,14 +182,14 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
                                         &b2->gaussian[j], b2->xyz,
                                         &b3->gaussian[k], b3->xyz,
                                         &b4->gaussian[l], b4->xyz,
-                                        debug);
+                                        fmw, debug);
                     result += tmp;
                     if (debug == 3) {
                         tmp1 = int2e_gto(&b1->gaussian[i], b1->xyz,
                                         &b2->gaussian[j], b2->xyz,
                                         &b3->gaussian[k], b3->xyz,
                                         &b4->gaussian[l], b4->xyz,
-                                        debug);
+                                        fmw, debug);
                     }
 
                 }
@@ -198,9 +201,9 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
 }
 
 #ifdef __INTEGRAL__INT2E__ONE__
-double* int2e_matrix(INPUT_INFO* b)
+double* int2e_matrix(INPUT_INFO* b, FMW *fmw)
 #else
-double**** int2e_matrix(INPUT_INFO* b)
+double**** int2e_matrix(INPUT_INFO* b, FMW *fmw)
 #endif
 {
     int debug = 0;
@@ -236,6 +239,7 @@ double**** int2e_matrix(INPUT_INFO* b)
     return matrix;
 #else
     // use four dimension array output int2e
+    int n = basis_count - 1;
     double ****e2;
     e2 = (double****)Malloc(sizeof(double***)*basis_count);
     for (i = 0; i < basis_count; i++) {
@@ -251,9 +255,9 @@ double**** int2e_matrix(INPUT_INFO* b)
     omp_set_num_threads(2);
     //#pragma omp parallel for private(j, k, l)
     for (i = 0; i < basis_count; i++) {
-        for (j = 0; j < basis_count; j++) {
+        for (j = n; j > -1; j--) {
             for (k = 0; k < basis_count; k++) {
-                for (l = 0; l < basis_count; l++) {
+                for (l = n; l > -1; l--) {
                 /*
                     debug = 0;
                     if (i == 0 && j == 0 && k == 0 && l == 1) {
@@ -274,7 +278,8 @@ double**** int2e_matrix(INPUT_INFO* b)
                     e2[l][k][j][i] = int2e_basis(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
-                                                 &basisSet[l], debug);
+                                                 &basisSet[l],
+                                                 fmw, debug);
                 }
             }
         }
@@ -284,17 +289,30 @@ double**** int2e_matrix(INPUT_INFO* b)
 }
 
 #ifdef __INTEGRAL__INT2E__ONE__
-void int2e_output(double* e, int n, char* msg)
+void int2e_output(double* e, int n, char *c, char *suffix)
 #else
-void int2e_output(double**** e, int n, char* msg)
+void int2e_output(double**** e, int n, char* c, char *suffix)
 #endif
 {
-    int i, j, k, l;
+    int i, j, k, l, len;
+    char randchar[3], fName[50];
+    time_t second = time(NULL) % 17;
+    FILE *f;
+
+    len = strlen(c);
+    strcpy(fName, c);
+    replace(fName, "inp", suffix);
+    sprintf(randchar, "%ld", second);
+    strcat(fName, randchar);
+
+    if (suffix == NULL)
+        f = stdout;
+    else
+        f = fopen(fName, "w");
+
 #ifdef __INTEGRAL__INT2E__ONE__
     int I;
 #endif
-
-    printf("%s\n", msg);
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
@@ -303,10 +321,10 @@ void int2e_output(double**** e, int n, char* msg)
 #ifdef __INTEGRAL__INT2E__ONE__
                     I = i * gsl_pow_3(n) + j * gsl_pow_2(n) + \
                                                             k * n + l;
-                    printf("%15.9lf", e[I]);
+                    fprintf(f, "%15.9lf", e[I]);
 #else
                     if (fabs(e[i][j][k][l]) > 1.0E-8)
-                        printf("%3d%3d%3d%3d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
+                        fprintf(f, "%3d%3d%3d%3d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
 #endif
                 }
             }

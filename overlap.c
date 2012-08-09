@@ -3,7 +3,7 @@
 #include <math.h>
 #include "common.h"
 #include "overlap.h"
-#include "ints.h"
+#include "int1e.h"
 
 double fact_l_lambda(int l, int lambda)
 {
@@ -89,33 +89,11 @@ gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
 // 关于此部分不甚明白
     int i;
     double gamma = a + b;
-    //double x1, x2, tmp;
 
     gsl_vector *center = gsl_vector_alloc(3);
     
     for (i = 0; i < 3; i++)
         center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
-
-    // FOR DEBUG
-    if (flags == 1) {
-        gsl_vector * test = gsl_vector_alloc(3);
-        gsl_vector * test2 = gsl_vector_alloc(3);
-        gsl_vector_set(test, 0, 0);
-        gsl_vector_set(test, 1, 0);
-        gsl_vector_set(test, 2, 2.175);
-        gsl_vector_memcpy(test2, test);
-        gsl_vector_sub(test, B);
-        gsl_vector_sub(test2, A);
-        if (gsl_vector_max(test) < 1.0E-10 || gsl_vector_max(test2) < 1.0E-10) {
-        //printf("----------------------------------------\n");
-        vector_output(A, 3, "用于计算中心的第一个坐标:");
-        vector_output(B, 3, "用于计算中心的第二个坐标:");
-        printf("alpha1 =%10.6lf\talpha2 =%10.6lf\n", a, b);
-        vector_output(center, 3, "中心为:");
-        }
-        gsl_vector_free(test);
-        gsl_vector_free(test2);
-    }
 
     return center;
 }
@@ -152,15 +130,7 @@ double overlap_gto_c(const GTO* g1, const gsl_vector* A, const GTO* g2, const gs
     K = gauss_K(g1->alpha, A, g2->alpha, B);
 
     result = pow(M_PI/gamma, 1.5) * K * Ix * Iy * Iz * normal1 * normal2 * coeff1 * coeff2;
-    if (debug == 2) {
-                printf("--------------------------------------------\n");
-                vector_output(PA, 3, "PA:");
-                vector_output(PB, 3, "PB:");
-                gto_output(g1, 1, "g1:");
-                gto_output(g2, 1, "g2:");
-                printf("%14.8lf%14.8lf%14.8lf%14.8lf%14.8lf\n", 
-                                                        K, Ix, Iy, Iz, result);
-    }
+
     gsl_vector_free(P);
     gsl_vector_free(PA);
     gsl_vector_free(PB);

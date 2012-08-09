@@ -120,7 +120,7 @@ gsl_matrix* scf(gsl_matrix *f, const gsl_matrix *s_root, int n, double* energy)
     gsl_eigen_symmv(ftt, eigValue, eigVector, w);
     *energy = gsl_vector_min(eigValue);
 
-    vector_output(eigValue, n, "FOCK本征值为：\n");
+    vector_output(eigValue, n, "FOCK本征值为：\n", NULL);
 #ifdef DEBUG_SCF
     matrix_output(eigVector, n,  "FOCK本征矢量为:\n");
 #endif
