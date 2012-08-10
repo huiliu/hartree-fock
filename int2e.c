@@ -256,8 +256,8 @@ double**** int2e_matrix(INPUT_INFO* b, FMW *fmw)
     //#pragma omp parallel for private(j, k, l)
     for (i = 0; i < basis_count; i++) {
         for (j = n; j > -1; j--) {
-            for (k = 0; k < basis_count; k++) {
-                for (l = n; l > -1; l--) {
+            for (k = n; k > -1; k--) {
+                for (l = 0; l < basis_count; l++) {
                 /*
                     debug = 0;
                     if (i == 0 && j == 0 && k == 0 && l == 1) {

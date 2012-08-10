@@ -69,7 +69,11 @@ double F_inc_gamma(int m ,double w, struct rbtree *rb)
     ITEM *f_result;
     MALLOC(f_result, sizeof(ITEM));
 
-    f_result->w = w;
+    if (w < 100)
+        cutoff_small(w, f_result);
+    else
+        cutoff(w, f_result);
+
     f_result->value =  -999;
     // search in the redblack tree
     f_result = (ITEM *)rbsearch(f_result, rb);
@@ -80,16 +84,23 @@ double F_inc_gamma(int m ,double w, struct rbtree *rb)
     double tmp = 0;
     register int i;
     if (w <= 17) {
-        if (m == 0 && w == 0)  result = 1.0;
-
-        result = tmp = 1.0 / factorial_2(2*m + 1);
-        for (i = 1; i < F_INC_GAMMA_CYCLE; i++) {
-            tmp *= ((2*w) / (2*m + 2*i + 1));
-            if ((tmp - F_INC_GAMMA_delta) < 0)
-                break;
-            result += tmp;
+        if (m == 0) {
+            if (w == 0)
+                result = 1.0;
+            else{
+                double sqrt_w = sqrt(w);
+                result = gsl_sf_erf(sqrt_w) * M_SQRTPI * 0.5 / sqrt_w;
+            }
+        }else {
+            result = tmp = 1.0 / factorial_2(2*m + 1);
+            for (i = 1; i < F_INC_GAMMA_CYCLE; i++) {
+                tmp *= ((2*w) / (2*m + 2*i + 1));
+                if ((tmp - F_INC_GAMMA_delta) < 0)
+                    break;
+                result += tmp;
+            }
+            result *= factorial_2(2 * m -1) * exp(-w);;
         }
-        result *= factorial_2(2 * m -1) * exp(-w);;
     }else
         result = factorial_2(2*m -1) / pow(2*w, m + 0.5) * sqrt(M_PI_2);
 
@@ -98,6 +109,45 @@ double F_inc_gamma(int m ,double w, struct rbtree *rb)
 #endif
 
     return result;
+}
+
+void cutoff_small(double w, ITEM * t)
+{
+        t->w = (unsigned int)(w*1E9);
+        t->i = 10;
+}
+void cutoff(double w, ITEM * t)
+{
+    if (w < 1E6) {
+        t->w = (unsigned int)(w*1E4);
+        t->i = 4;
+    }else if (w < 1E7) {
+        t->w = (unsigned int)(w*1E3);
+        t->i = 3;
+    }else if (w < 1E8) {
+        t->w = (unsigned int)(w*1E2);
+        t->i = 2;
+    }else if (w < 1E9) {
+        t->w = (unsigned int)(w*1E1);
+        t->i = 1;
+    }else {
+        t->w = (unsigned int)(w*1E-3);
+        t->i = 0;
+    }
+}
+
+int compare(const void *pa, const void *pb, const void *config)
+{
+    ITEM *a = (ITEM *)pa;
+    ITEM *b = (ITEM *)pb;
+    
+    if (a->i < b->i) return 1;
+    if (a->i > b->i) return -1;
+    if (a->i == b->i && a->w > b->w)
+        return 1;
+    else
+        return -1;
+    return 0;
 }
 
 int factorial(int n)
@@ -146,17 +196,6 @@ void* Calloc(size_t s, size_t n)
         exit(EXIT_FAILURE);
     }else
         return p;
-}
-
-int compare(const void *pa, const void *pb, const void *config)
-{
-#define epsilon 1.0E-8
-    ITEM *a, *b;
-    a = (ITEM *)pa; b = (ITEM *)pb;
-    return gsl_fcmp(a->w, b->w, epsilon);
-	if(a->w < b->w) return -1;
-	if(a->w > b->w) return 1;
-    return 0;
 }
 
 char *replace(char *src, char *a, char *b)

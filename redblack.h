@@ -29,7 +29,8 @@
 #ifndef _REDBLACK_H
 //#include "common.h"
 typedef struct {
-    double w;
+    unsigned int w;
+    short int i;
     double value;
 }ITEM;
 

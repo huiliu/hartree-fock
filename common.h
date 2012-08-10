@@ -8,7 +8,7 @@
 #define __INTEGRAL__COMMON__
 
 // use rbtree store and searc the value of incomplete gamma function.
-//#define ERI_INT_USE_REDBLACK_TREE
+#define ERI_INT_USE_REDBLACK_TREE
 
 typedef struct {
     unsigned int count;
@@ -43,8 +43,8 @@ int factorial(int);
 int factorial_2(int);
 void* Malloc(size_t n);
 void* Calloc(size_t s, size_t n);
-int compare(const void *pa, const void *pb, const void *config);
-unsigned int cutoff(double w);
-unsigned int cutoff_small(double w);
+int compare(const void*, const void*, const void*);
+void cutoff(double, ITEM*);
+void cutoff_small(double, ITEM*);
 char *replace(char *src, char *a, char *b);
 #endif

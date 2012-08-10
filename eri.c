@@ -69,6 +69,7 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
     for (n = 0; n <= N2; n++)
         E2z[n] = RecCoeff(n3, n4, n, &gamma2, QC->data+2, QD->data+2);
 
+/*
     for (i = 0; i <= L1+L2; i++) {
         for (j = 0; j <= M1+M2; j++) {
             for (k = 0; k <= N1+N2; k++) {
@@ -76,13 +77,16 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
             }
         }
     }
+*/
     for (i = 0; i <= L1; i++) {
         for (j = 0; j <= M1; j++) {
             for (k = 0; k <= N1; k++) {
     for (l = 0; l <= L2; l++) {
         for (m = 0; m <= M2; m++) {
             for (n = 0; n <= N2; n++) {
-                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * E2x[l] * E2y[m] * E2z[n] * RR[i+l][j+m][k+n];
+                result += gsl_pow_int(-1, l+m+n) * E1x[i] * E1y[j] * E1z[k] * \
+                            E2x[l] * E2y[m] * E2z[n] * \
+                            R(0, i+l, j+m, k+n, PQ, finc, fmw, debug); 
             }
         }
     }
