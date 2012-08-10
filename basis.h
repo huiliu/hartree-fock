@@ -5,6 +5,7 @@
 
 // angstrom to bohr radius
 #define ANGS_2_BOHR     1.88971616463
+#define ATOM_MAX_COUNT  10
 
 typedef struct gto {
     int l, m, n;
@@ -34,8 +35,8 @@ typedef struct FILE_INPUT_ {
     int eCount;             // electron count
     int basisCount;    // basis function count
     BASIS* basisSet;   // save all of the basis set
-    gsl_vector** gXYZ;   // save all of coordination
-    ATOM_INFO** atomList;   // element information
+    gsl_vector *gXYZ[ATOM_MAX_COUNT];   // save all of coordination
+    ATOM_INFO *atomList[ATOM_MAX_COUNT];   // element information
 }INPUT_INFO;
 
 void* read_basis(const char * );

@@ -177,8 +177,7 @@ INPUT_INFO* parse_input(const char* file_name)
     ATOM_INFO *atom; // save the coordination of atoms
     int state = 0, i, j, Atom_index = 0;
     double tmp_coord = 0.0;
-    input_information = malloc(sizeof(INPUT_INFO));
-    input_information->gXYZ = (gsl_vector**)malloc(sizeof(gsl_vector*));
+    input_information = calloc(sizeof(INPUT_INFO), 1);
 
     f = fopen(file_name, "r");
 
@@ -204,11 +203,6 @@ INPUT_INFO* parse_input(const char* file_name)
                     state = 0;
                     break;
                 }
-                // save coordination
-                input_information->atomList = (ATOM_INFO**) \
-                            realloc(input_information->atomList, Atom_index+1);
-                input_information->gXYZ = (gsl_vector**) \
-                            realloc(input_information->gXYZ, (Atom_index + 1));
                 // save atom information
                 atom = input_information->atomList[Atom_index] = 
                                     calloc(sizeof(ATOM_INFO), 1);
