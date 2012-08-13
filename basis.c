@@ -115,51 +115,6 @@ void* read_basis(const char * file_name)
     return basis;
 }
 
-// 参数 count 表示一个基函数由count个gaussian函数组成
-void basis_set_output(const BASIS* b, int count, char* msg)
-{
-    int i;
-    printf("%s\n", msg);
-    for (i = 0; i < count; i++) {
-        vector_output(b[i].xyz, 3, "基组坐标:", NULL);
-        gto_output(b[i].gaussian, b[i].gaussCount, "基函数");
-    }
-}
-
-void gto_output(const GTO* g, int count, char* msg)
-{
-    int i;
-    double alpha, coeff, norm;
-    int l, m, n;
-
-    printf("%s\n", msg);
-    for (i = 0; i < count; i++)
-    {
-        l = (g+i)->l;
-        m = (g+i)->m;
-        n = (g+i)->n;
-        alpha = (g+i)->alpha;
-        coeff = (g+i)->coeff;
-        norm = (g+i)->norm;
-        printf("%d %d %d %12.8lf %12.8lf %12.8lf\n",
-                l, m, n, alpha, coeff, norm);
-    }
-}
-
-void atom_output(const ATOM_INFO** atom, int n)
-{
-    ATOM_INFO *a=NULL;
-    int i;
-    for (i = 0; i < n; i++) {
-        a = (ATOM_INFO*)atom[i];
-        printf("%s %d %d%12.7lf%12.7lf%12.7lf\n", a->symbol, a->n, 
-                    a->basisCount, a->coordination->data[0], 
-                    a->coordination->data[1], a->coordination->data[2]); 
-        // for (j = 0; j < a->basisCount; j++)
-        //     basis_set_output(a->basis + j, 3, "Basis Function:");
-    }
-}
-
 // ----------------------------------------------------------------------------
 // 读取基组方法的重新实现
 #define Item_count              3

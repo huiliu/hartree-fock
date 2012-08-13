@@ -114,15 +114,6 @@ double kinetic_I_xyz_c(const GTO* g1, const gsl_vector* A,
         kinetic_xyz -= alpha1 * l2 * overlap_gto(&g1_2, A, &g2_1, B, debug);
         kinetic_xyz -= alpha2 * l1 * overlap_gto(&g1_1, A, &g2_2, B, debug);
 
-    if (debug == 1) {
-        printf("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~   ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~\n");  
-        gto_output(&g1_1, 1, "g1_1:");
-        gto_output(&g1_2, 1, "g1_2:");
-        gto_output(&g2_1, 1, "g2_1:");
-        gto_output(&g2_2, 1, "g2_2:");
-        printf("          kinetic_xyz = %lf\n", kinetic_xyz);
-    }
-
     return kinetic_xyz;
 }
 
@@ -301,11 +292,6 @@ double nuclear_elect_attraction_basis(const BASIS* b1, const BASIS* b2,
     gaussCount_1 = b1->gaussCount;
     gaussCount_2 = b2->gaussCount;
 
-if (debug == 2) {
-    printf("-----------------------\n");
-    basis_set_output(b1, 1, "b1:");
-    basis_set_output(b2, 1, "b2:");
-}
     for (i = 0; i < gaussCount_1; i++) {
         for (j = 0; j < gaussCount_2; j++) {
             for (s = 0; s < atomCount; s++) {
@@ -315,16 +301,8 @@ if (debug == 2) {
                     &b2->gaussian[j], b2->xyz, 
                     atom->coordination, fmw, debug) * atom->n;
             }
-if (debug == 2) {
-    printf("===============gauss i = %d j = %d================\n", i, j);
-    gto_output(&b1->gaussian[i], 1, "i basis:");
-    gto_output(&b2->gaussian[j], 1, "j basis:");
-}
         }
     }
-if (debug == 2)
-    printf("\n");
-
     return result;
 }
 
@@ -384,95 +362,3 @@ gsl_matrix* hamiltonian(INPUT_INFO* b, FMW *fmw)
 
     return h;
 }
-/*
-double check_nuclear(const BASIS* b1, const BASIS* b2, ATOM_INFO **atomList, int atomCount)
-{
-    int i, j, s;
-    int gaussCount_1, gaussCount_2;
-    double alpha1, alpha2, xa, ya, za, xb, yb, zb, xc, yc, zc, norm1, norm2;
-    int l1, m1, n1, l2, m2, n2;
-    gsl_vector *A, *B, *C;
-    GTO *g1, *g2;
-    double result = 0;
-
-    gaussCount_1 = b1->gaussCount;
-    gaussCount_2 = b2->gaussCount;
-
-    for (i = 0; i < gaussCount_1; i++) {
-        for (j = 0; j < gaussCount_2; j++) {
-            g1 = &b1->gaussian[i];
-            g2 = &b2->gaussian[i];
-
-            A = b1->xyz;
-            B = b2->xyz;
-
-            l1 = g1->l; m1 = g1->m; n1 = g1->n; alpha1 = g1->alpha; norm1 = g1->norm;
-            l2 = g2->l; m2 = g2->m; n2 = g2->n; alpha2 = g2->alpha; norm2 = g2->norm;
-
-            xa = gsl_vector_get(A, 0);
-            ya = gsl_vector_get(A, 1);
-            za = gsl_vector_get(A, 2);
-
-            xb = gsl_vector_get(B, 0);
-            yb = gsl_vector_get(B, 1);
-            zb = gsl_vector_get(B, 2);
-
-            for (s = 0; s < atomCount; s++) {
-                C = atomList[s]->coordination;
-
-                xc = gsl_vector_get(C, 0);
-                yc = gsl_vector_get(C, 1);
-                zc = gsl_vector_get(C, 2);
-
-                result = nuclear_attraction(xa, ya, za, norm1, l1, m1, n1, alpha1, \
-                                xb, yb, zb, norm2, l2, m2, n2, alpha2, \
-                                xc, yc, zc);
-            }
-        }
-    }
-    return result;
-}
-
-double check_kinetic(const BASIS* b1, const BASIS* b2, int debug)
-{
-    int i, j;
-    int gaussCount_1, gaussCount_2;
-    double alpha1, alpha2, xa, ya, za, xb, yb, zb;
-    int l1, m1, n1, l2, m2, n2;
-    GTO *g1, *g2;
-    gsl_vector *A, *B;
-    double result = 0;
-
-    gaussCount_1 = b1->gaussCount;
-    gaussCount_2 = b2->gaussCount;
-
-    for (i = 0; i < gaussCount_1; i++) {
-        for (j = 0; j < gaussCount_2; j++) {
-            g1= &b1->gaussian[i];
-            g2= &b2->gaussian[j];
-
-            A = b1->xyz;
-            B = b2->xyz;
-
-            alpha1 = g1->alpha;
-            alpha2 = g2->alpha;
-
-
-            l1 = g1->l; m1 = g1->m; n1 = g1->n;
-            l2 = g2->l; m2 = g2->m; n2 = g2->n;
-            xa = gsl_vector_get(A, 0);
-            ya = gsl_vector_get(A, 1);
-            za = gsl_vector_get(A, 2);
-
-            xb = gsl_vector_get(B, 0);
-            yb = gsl_vector_get(B, 1);
-            zb = gsl_vector_get(B, 2);
-
-            result += kinetic(alpha1, l1, m1, n1, xa, ya, za, 
-                              alpha2, l2, m2, n2, xb, yb, zb) * \
-                              g1->coeff * g1->norm * g2->coeff * g2->norm;
-        }
-    }
-    return result;
-}
-*/

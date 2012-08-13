@@ -12,7 +12,7 @@
 
 int main(int argc, char** argv)
 {
-    int n, m;
+    int n;
     char *basis_base = NULL, randchar[3];
 
     if (argc < 2) {
@@ -21,7 +21,6 @@ int main(int argc, char** argv)
     }else
         basis_base = argv[1];
 
-    m = strlen(basis_base);
     FMW *fmw;
 #ifdef ERI_INT_USE_REDBLACK_TREE
     int i;

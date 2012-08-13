@@ -8,16 +8,70 @@
 /*
  *  放置一些常用函数
  */
+
+// 参数 count 表示一个基函数由count个gaussian函数组成
+void basis_set_output(const BASIS* b, int count, char* msg)
+{
+    int i;
+    printf("%s\n", msg);
+    for (i = 0; i < count; i++) {
+        vector_output(b[i].xyz, 3, "基组坐标:", NULL);
+        gto_output(b[i].gaussian, b[i].gaussCount, "基函数");
+    }
+}
+
+void gto_output(const GTO* g, int count, char* msg)
+{
+    int i;
+    double alpha, coeff, norm;
+    int l, m, n;
+
+    printf("%s\n", msg);
+    for (i = 0; i < count; i++)
+    {
+        l = (g+i)->l;
+        m = (g+i)->m;
+        n = (g+i)->n;
+        alpha = (g+i)->alpha;
+        coeff = (g+i)->coeff;
+        norm = (g+i)->norm;
+        printf("%d %d %d %12.8lf %12.8lf %12.8lf\n",
+                l, m, n, alpha, coeff, norm);
+    }
+}
+
+void atom_output(const ATOM_INFO** atom, int n)
+{
+    ATOM_INFO *a=NULL;
+    int i;
+    for (i = 0; i < n; i++) {
+        a = (ATOM_INFO*)atom[i];
+        printf("%s %d %d%12.7lf%12.7lf%12.7lf\n", a->symbol, a->n, 
+                    a->basisCount, a->coordination->data[0], 
+                    a->coordination->data[1], a->coordination->data[2]); 
+        // for (j = 0; j < a->basisCount; j++)
+        //     basis_set_output(a->basis + j, 3, "Basis Function:");
+    }
+}
+
+// matrix_output    output matrix with pretty format.
+//  const gsl_matrix    *m      the matrix would be output;
+//                  int  n      the rank of matrix m;
+//          const char  *c      the filename which would be used to store 
+//                              the output information
+//          char * suffix       if it's NULL, the print would be send to stdout
 void matrix_output(const gsl_matrix *m, int n, const char *c, char *suffix)
 {
     int i, j, len;
     FILE *f;
-    char randchar[3], fName[50];
-    time_t second = time(NULL) % 17;
 
     if (suffix == NULL)
         f = stdout;
     else{
+
+        char randchar[3], fName[50];
+        time_t second = time(NULL) % 17;
+
         len = strlen(c);
         strcpy(fName, c);
         replace(fName, "inp", suffix);
@@ -33,6 +87,50 @@ void matrix_output(const gsl_matrix *m, int n, const char *c, char *suffix)
         fprintf(f, "\n");
     }
     //fclose(f);
+}
+
+#ifdef __INTEGRAL__INT2E__ONE__
+void int2e_output(double* e, int n, char *c, char *suffix)
+#else
+void int2e_output(double**** e, int n, char* c, char *suffix)
+#endif
+{
+    int i, j, k, l, len;
+    char randchar[3], fName[50];
+    time_t second = time(NULL) % 17;
+    FILE *f;
+
+    len = strlen(c);
+    strcpy(fName, c);
+    replace(fName, "inp", suffix);
+    sprintf(randchar, "%ld", second);
+    strcat(fName, randchar);
+
+    if (suffix == NULL)
+        f = stdout;
+    else
+        f = fopen(fName, "w");
+
+#ifdef __INTEGRAL__INT2E__ONE__
+    int I;
+#endif
+
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+            for (k = 0; k < n; k++) {
+                for (l = 0; l < n; l++) {
+#ifdef __INTEGRAL__INT2E__ONE__
+                    I = i * gsl_pow_3(n) + j * gsl_pow_2(n) + \
+                                                            k * n + l;
+                    fprintf(f, "%15.9lf", e[I]);
+#else
+                    if (fabs(e[i][j][k][l]) > 1.0E-8)
+                        fprintf(f, "%3d%3d%3d%3d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
+#endif
+                }
+            }
+        }
+    }
 }
 
 void vector_output(const gsl_vector *v, int n, const char *c, char *suffix)

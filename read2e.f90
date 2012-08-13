@@ -1,3 +1,6 @@
+!USAGE:
+!       ./read2e basisNum x2e.int
+!
 
 subroutine Read2E(Nb, FileName)
 

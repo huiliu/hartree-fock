@@ -288,50 +288,6 @@ double**** int2e_matrix(INPUT_INFO* b, FMW *fmw)
 #endif
 }
 
-#ifdef __INTEGRAL__INT2E__ONE__
-void int2e_output(double* e, int n, char *c, char *suffix)
-#else
-void int2e_output(double**** e, int n, char* c, char *suffix)
-#endif
-{
-    int i, j, k, l, len;
-    char randchar[3], fName[50];
-    time_t second = time(NULL) % 17;
-    FILE *f;
-
-    len = strlen(c);
-    strcpy(fName, c);
-    replace(fName, "inp", suffix);
-    sprintf(randchar, "%ld", second);
-    strcat(fName, randchar);
-
-    if (suffix == NULL)
-        f = stdout;
-    else
-        f = fopen(fName, "w");
-
-#ifdef __INTEGRAL__INT2E__ONE__
-    int I;
-#endif
-
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
-            for (k = 0; k < n; k++) {
-                for (l = 0; l < n; l++) {
-#ifdef __INTEGRAL__INT2E__ONE__
-                    I = i * gsl_pow_3(n) + j * gsl_pow_2(n) + \
-                                                            k * n + l;
-                    fprintf(f, "%15.9lf", e[I]);
-#else
-                    if (fabs(e[i][j][k][l]) > 1.0E-8)
-                        fprintf(f, "%3d%3d%3d%3d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
-#endif
-                }
-            }
-        }
-    }
-}
-
 // check the symtery of two-electron integral
 int chkSYM(double ****e, int i, int j, int k, int l)
 {

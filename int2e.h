@@ -28,10 +28,8 @@ double int2e_basis(const BASIS* b1, const BASIS* b2,
 
 #ifdef __INTEGRAL__INT2E__ONE__
 double* int2e_matrix(INPUT_INFO*, FMW*);
-void int2e_output(double* e, int n, char*,char* );
 #else
 double**** int2e_matrix(INPUT_INFO*, FMW*);
-void int2e_output(double**** e, int n, char*,char* );
 #endif
 
 int chkSYM(double ****e, int i, int j, int k, int l);

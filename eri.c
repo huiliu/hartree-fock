@@ -62,6 +62,7 @@ double ERI_gto(const GTO* g1, const gsl_vector* A,
         E1y[j] = RecCoeff(m1, m2, j, &gamma1, PA->data+1, PB->data+1);
     for (k = 0; k <= N1; k++)
         E1z[k] = RecCoeff(n1, n2, k, &gamma1, PA->data+2, PB->data+2);
+
     for (l = 0; l <= L2; l++)
         E2x[l] = RecCoeff(l3, l4, l, &gamma2, QC->data, QD->data);
     for (m = 0; m <= M2; m++)

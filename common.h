@@ -34,6 +34,9 @@ typedef struct {
         exit(EXIT_FAILURE);\
     }
 
+void gto_output(const GTO* g, int count, char* msg);
+void basis_set_output(const BASIS*, int, char* );
+void atom_output(const ATOM_INFO** atom, int n);
 // 以更好的格式输出矩阵
 void matrix_output(const gsl_matrix *, int , const char *, char *);
 // 以更好的格式输出向量
@@ -47,4 +50,11 @@ int compare(const void *pa, const void *pb, const void *config);
 unsigned int cutoff(double w);
 unsigned int cutoff_small(double w);
 char *replace(char *src, char *a, char *b);
+
+#ifdef __INTEGRAL__INT2E__ONE__
+    void int2e_output(double* e, int n, char*,char* );
+#else
+    void int2e_output(double**** e, int n, char*,char* );
+#endif
+
 #endif
