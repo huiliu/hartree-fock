@@ -241,11 +241,11 @@ double**** int2e_matrix(INPUT_INFO* b, FMW *fmw)
     // use four dimension array output int2e
     int n = basis_count - 1;
     double ****e2;
-    e2 = (double****)Calloc(sizeof(double***)*basis_count);
+    e2 = (double****)Calloc(sizeof(double***),basis_count);
     for (i = 0; i < basis_count; i++) {
-        *(e2+i) = (double***)Calloc(sizeof(double**)*basis_count);
+        *(e2+i) = (double***)Calloc(sizeof(double**),basis_count);
         for (j = 0; j < basis_count; j++) {
-            *(e2[i]+j) = (double**)Calloc(sizeof(double*)*basis_count);
+            *(e2[i]+j) = (double**)Calloc(sizeof(double*),basis_count);
             for (k = 0; k < basis_count; k++) {
                 *(e2[i][j]+k) = (double*)Calloc(sizeof(double), basis_count);
             }

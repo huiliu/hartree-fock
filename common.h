@@ -8,7 +8,7 @@
 #define __INTEGRAL__COMMON__
 
 // use rbtree store and searc the value of incomplete gamma function.
-//#define ERI_INT_USE_REDBLACK_TREE
+#define ERI_INT_USE_REDBLACK_TREE
 
 typedef struct {
     unsigned int count;
