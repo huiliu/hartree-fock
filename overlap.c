@@ -206,7 +206,8 @@ gsl_matrix* overlap_matrix(INPUT_INFO* b)
 
     for (i = 0; i <  basis_count; i++) {
         for (j = 0; j < basis_count; j++) {
-            result = overlap_basis(&basisSet[i], basisSet[i].xyz, &basisSet[j],
+            //result = overlap_basis(&basisSet[i], basisSet[i].xyz, &basisSet[j],
+            result = overlap_basis_os(&basisSet[i], basisSet[i].xyz, &basisSet[j],
                             basisSet[j].xyz, 0);
             //result_check = check_overlap(&basisSet[i], &basisSet[j], 0);
             // 设定一个阀值，如果积分值小于某个数就舍去
@@ -267,3 +268,156 @@ double check_overlap(const BASIS* b1, const BASIS* b2, int debug)
     return result;
 }
 */
+
+double overlap_gto_os(int l1, int m1, int n1,
+                      int l2, int m2, int n2,
+                      gsl_vector *PA, gsl_vector *PB,
+                      double zeta, double *T)
+{
+    double item1, item2, item3;
+    if (l2 >= 1) {
+        // recurrence l2 to 0 
+        if (l2 >= 2)
+            item1 = l2 / (2*zeta) * overlap_gto_os(l1, m1, n1, l2-2, m2, n2, PA, PB, zeta, T);
+        else
+            item1 = 0;
+
+        if (l1 >= 1) 
+            item2 = l1 / (2*zeta) * overlap_gto_os(l1-1, m1, n1, l2-1, m2, n2, PA, PB, zeta, T);
+        else
+            item2 = 0;
+
+        item3 = PB->data[0] * overlap_gto_os(l1, m1, n1, l2-1, m2, n2, PA, PB, zeta, T);
+
+        return item1 + item2 + item3;
+    }
+
+    if (m2 >= 1) {
+        // recurrence m2 to 0 
+        if (m2 >= 2)
+            item1 = m2 / (2*zeta) * overlap_gto_os(l1, m1, n1, l2, m2-2, n2, PA, PB, zeta, T);
+        else
+            item1 = 0;
+
+        if (m1 >= 1)
+            item2 = m1 / (2*zeta) * overlap_gto_os(l1, m1-1, n1, l2, m2-1, n2, PA, PB, zeta, T);
+        else
+            item2 = 0;
+
+        item3 = PB->data[1] * overlap_gto_os(l1, m1, n1, l2, m2-1, n2, PA, PB, zeta, T);
+
+        return item1 + item2 + item3;
+    }
+
+    if (n2 >= 1) {
+        // recurrence n2 to 0 
+        if (n2 >= 2)
+            item1 = n2 / (2*zeta) * overlap_gto_os(l1, m1, n1, l2, m2, n2-2, PA, PB, zeta, T);
+        else
+            item1 = 0;
+
+        if (n1 >= 1)
+            item2 = n1 / (2*zeta) * overlap_gto_os(l1, m1, n1-1, l2, m2, n2-1, PA, PB, zeta, T);
+        else
+            item2 = 0;
+
+        item3 = PB->data[2] * overlap_gto_os(l1, m1, n1, l2, m2, n2-1, PA, PB, zeta, T);
+
+        return item1 + item2 + item3;
+    }
+
+    if (l1 >= 1) {
+        // recurrence l1 to 0 
+        if (l1 >= 2)
+            item1 = l1 / (2*zeta) * overlap_gto_os(l1-2, m1, n1, l2, m2, n2, PA, PB, zeta, T);
+        else
+            item1 = 0;
+
+        if (l2 >= 1)
+            item2 = l2 / (2*zeta) * overlap_gto_os(l1-1, m1, n1, l2-1, m2, n2, PA, PB, zeta, T);
+        else
+            item2 = 0;
+
+        item3 = PA->data[0] * overlap_gto_os(l1-1, m1, n1, l2, m2, n2, PA, PB, zeta, T);
+
+        return item1 + item2 + item3;
+    }
+
+    if (m1 >= 1) {
+        // recurrence m2 to 0 
+        if (m1 >= 2)
+            item1 = m1 / (2*zeta) * overlap_gto_os(l1, m1-1, n1, l2, m2, n2, PA, PB, zeta, T);
+        else
+            item1 = 0;
+        if (m2 >= 1)
+            item2 = m2 / (2*zeta) * overlap_gto_os(l1, m1-1, n1, l2, m2-1, n2, PA, PB, zeta, T);
+        else
+            item2 = 0;
+
+        item3 = PA->data[1] * overlap_gto_os(l1, m1-1, n1, l2, m2, n2, PA, PB, zeta, T);
+        return item1 + item2 + item3;
+    }
+
+    if (n1 >= 1) {
+        // recurrence n2 to 0 
+        if (n1 >= 2)
+            item1 = n1 / (2*zeta) * overlap_gto_os(l1, m1, n1-2, l2, m2, n2, PA, PB, zeta, T);
+        else
+            item1 = 0;
+
+        if (n2 >= 1)
+            item2 = n2 / (2*zeta) * overlap_gto_os(l1, m1, n1-1, l2, m2, n2-1, PA, PB, zeta, T);
+        else
+            item2 = 0;
+
+        item3 = PA->data[2] * overlap_gto_os(l1, m1, n1-1, l2, m2, n2, PA, PB, zeta, T);
+        return item1 + item2 + item3;
+    }
+
+    if (l1 == m1 && m1 == n1 && n1 == l2 && l2 == m2 && m2 == n2 && n2 == 0) {
+        // return the s function (0,0,0||0,0,0) overlap integrals.
+        return pow(M_PI/zeta, 1.5) * exp(*T);
+    }
+
+    return -1;
+}
+
+double overlap_basis_os(const BASIS *b1, const gsl_vector *A,
+                      const BASIS *b2, const gsl_vector *B, int debug)
+{
+    int i, j;
+    double alpha1, alpha2, gamma, norm_AB_2, T;
+    double result = 0;
+    GTO *g1, *g2;
+    gsl_vector *AB, *PA, *PB;
+
+    PB = gsl_vector_alloc(3);
+    AB = gsl_vector_alloc(3);
+
+    gsl_vector_memcpy(AB, A);
+    gsl_vector_sub(AB, B);
+
+    norm_AB_2 = gsl_pow_2(gsl_blas_dnrm2(AB));
+
+    // 对组成基组的Gaussian函数循环
+    for (i = 0; i < b1->gaussCount; i++) {
+        for (j = 0; j < b2->gaussCount; j++) {
+            g1 = &b1->gaussian[i];
+            g2 = &b2->gaussian[j];
+
+            PA = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
+            gsl_vector_memcpy(PB, PA);
+
+            gsl_vector_sub(PA, A);
+            gsl_vector_sub(PB, B);
+
+            gamma = g1->alpha + g2->alpha;
+            T = -(g1->alpha * g2->alpha)/gamma *  norm_AB_2;
+
+            result += overlap_gto_os(g1->l, g1->m, g1->n, 
+                                     g2->l, g2->m, g2->n, PA, PB, gamma, &T) \
+                        * g1->norm *g1->coeff * g2->norm * g2->coeff;
+        }
+    }
+    return result;
+}

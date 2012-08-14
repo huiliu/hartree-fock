@@ -14,7 +14,12 @@ double I_xyz(int l, double pax, int ll, double pbx, double gamma, int flags);
 double gauss_K(double a, const gsl_vector *A, double b, const gsl_vector *B);
 gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, const double b, const gsl_vector *B, int);
 double overlap_basis(const BASIS *, const gsl_vector *, const BASIS *, const gsl_vector *, int);
+double overlap_basis_os(const BASIS *, const gsl_vector *, const BASIS *, const gsl_vector *, int);
 double overlap_gto(const GTO*, const gsl_vector* A, const GTO*, const gsl_vector* B, int debug);
 gsl_matrix* overlap_matrix(INPUT_INFO* );
 double check_overlap(const BASIS* b1, const BASIS* b2, int debug);
+double overlap_gto_os(int l1, int m1, int n1,
+                      int l2, int m2, int n2,
+                      gsl_vector *PA, gsl_vector *PB,
+                      double zeta, double *T);
 #endif
