@@ -168,9 +168,9 @@ double ERI_gto_OS(int l1, int m1, int n1,
         }else
             item2 = 0;
 
-        if (n1 >=1)
-            item3 = n1 / (2*zeta) * (ERI_gto_OS(l1, m1, n1-1, l2, m2, n2, l3, m3, n3, l4, m4, n4-1, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)
-                       - ro / zeta * ERI_gto_OS(l1, m1, n1-1, l2, m2, n2, l3, m3, n3, l4, m4, n4-1, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
+        if (n3 >=1)
+            item3 = n3 / (2*gamma) * (ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3, m3, n3-1, l4, m4, n4-1, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)
+                       - ro / gamma * ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3, m3, n3-1, l4, m4, n4-1, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
         else
             item3 = 0;
 
@@ -179,8 +179,8 @@ double ERI_gto_OS(int l1, int m1, int n1,
         else
             item4 = 0;
 
-        if (n3 >= 1)
-            item5 = n3 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3, m3, n3-1, l4, m4, n4-1, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        if (n1 >= 1)
+            item5 = n1 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1-1, l2, m2, n2, l3, m3, n3, l4, m4, n4-1, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
         else
             item5 = 0;
 
@@ -199,9 +199,9 @@ double ERI_gto_OS(int l1, int m1, int n1,
         }else
             item2 = 0;
 
-        if (m1 >=1)
-            item3 = m1 / (2*zeta) * (ERI_gto_OS(l1, m1-1, n1, l2, m2, n2, l3, m3, n3, l4, m4-1, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
-                       - ro / zeta * ERI_gto_OS(l1, m1-1, n1, l2, m2, n2, l3, m3, n3, l4, m4-1, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
+        if (m3 >=1)
+            item3 = m3 / (2*gamma) * (ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3, m3-1, n3, l4, m4-1, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
+                       - ro / gamma * ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3, m3-1, n3, l4, m4-1, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
         else
             item3 = 0;
 
@@ -210,8 +210,8 @@ double ERI_gto_OS(int l1, int m1, int n1,
         else
             item4 = 0;
 
-        if (m3 >= 1)
-            item5 = m3 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3, m3-1, n3, l4, m4-1, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        if (m1 >= 1)
+            item5 = m1 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1-1, n1, l2, m2, n2, l3, m3, n3, l4, m4-1, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
         else
             item5 = 0;
 
@@ -230,9 +230,9 @@ double ERI_gto_OS(int l1, int m1, int n1,
         }else
             item2 = 0;
 
-        if (l1 >=1)
-            item3 = l1 / (2*zeta) * (ERI_gto_OS(l1-1, m1, n1, l2, m2, n2, l3, m3, n3, l4-1, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)
-                       - ro / zeta * ERI_gto_OS(l1-1, m1, n1, l2, m2, n2, l3, m3, n3, l4-1, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
+        if (l3 >=1)
+            item3 = l3 / (2*gamma) * (ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3-1, m3, n3, l4-1, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)
+                       - ro / gamma * ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3-1, m3, n3, l4-1, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
         else
             item3 = 0;
 
@@ -241,8 +241,8 @@ double ERI_gto_OS(int l1, int m1, int n1,
         else
             item4 = 0;
 
-        if (l3 >= 1)
-            item5 = l3 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1, l2, m2, n2, l3-1, m3, n3, l4-1, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        if (l1 >= 1)
+            item5 = l1 / (2*(zeta + gamma)) * ERI_gto_OS(l1-1, m1, n1, l2, m2, n2, l3, m3, n3, l4-1, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
         else
             item5 = 0;
 
@@ -355,9 +355,9 @@ double ERI_gto_OS(int l1, int m1, int n1,
         }else
             item2 = 0;
 
-        if (n3 >=1)
-            item3 = n3 / (2*zeta) * (ERI_gto_OS(l1, m1, n1, l2, m2, n2-1, l3, m3, n3-1, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
-                       - ro / zeta * ERI_gto_OS(l1, m1, n1, l2, m2, n2-1, l3, m3, n3-1, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
+        if (n1 >=1)
+            item3 = n1 / (2*zeta) * (ERI_gto_OS(l1, m1, n1-1, l2, m2, n2-1, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
+                       - ro / zeta * ERI_gto_OS(l1, m1, n1-1, l2, m2, n2-1, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
         else
             item3 = 0;
 
@@ -366,8 +366,8 @@ double ERI_gto_OS(int l1, int m1, int n1,
         else
             item4 = 0;
 
-        if (n1 >= 1)
-            item5 = n1 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1-1, l2, m2, n2-1, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP,  m+1, T);
+        if (n3 >= 1)
+            item5 = n1 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1, l2, m2, n2-1, l3, m3, n3-1, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP,  m+1, T);
         else
             item5 = 0;
 
@@ -386,9 +386,9 @@ double ERI_gto_OS(int l1, int m1, int n1,
         }else
             item2 = 0;
 
-        if (m3 >=1)
-            item3 = m3 / (2*zeta) * (ERI_gto_OS(l1, m1, n1, l2, m2-1, n2, l3, m3-1, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
-                       - ro / zeta * ERI_gto_OS(l1, m1, n1, l2, m2-1, n2, l3, m3-1, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
+        if (m1 >=1)
+            item3 = m1 / (2*zeta) * (ERI_gto_OS(l1, m1-1, n1, l2, m2-1, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
+                       - ro / zeta * ERI_gto_OS(l1, m1-1, n1, l2, m2-1, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
         else
             item3 = 0;
 
@@ -397,8 +397,8 @@ double ERI_gto_OS(int l1, int m1, int n1,
         else
             item5 = 0;
 
-        if (m1 >= 1)
-            item4 = m1 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1-1, n1, l2, m2-1, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        if (m3 >= 1)
+            item4 = m3 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1, l2, m2-1, n2, l3, m3-1, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
         else
             item4 = 0;
 
@@ -417,9 +417,9 @@ double ERI_gto_OS(int l1, int m1, int n1,
         }else
             item2 = 0;
 
-        if (l3 >=1)
-            item3 = l3 / (2*zeta) * (ERI_gto_OS(l1, m1, n1, l2-1, m2, n2, l3-1, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
-                       - ro / zeta * ERI_gto_OS(l1, m1, n1, l2-1, m2, n2, l3-1, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
+        if (l1 >=1)
+            item3 = l1 / (2*zeta) * (ERI_gto_OS(l1-1, m1, n1, l2-1, m2, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
+                       - ro / zeta * ERI_gto_OS(l1-1, m1, n1, l2-1, m2, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T));
         else
             item3 = 0;
 
@@ -428,8 +428,8 @@ double ERI_gto_OS(int l1, int m1, int n1,
         else
             item5 = 0;
 
-        if (l1 >= 1)
-            item4 = l1 / (2*(zeta + gamma)) * ERI_gto_OS(l1-1, m1, n1, l2-1, m2, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        if (l3 >= 1)
+            item4 = l3 / (2*(zeta + gamma)) * ERI_gto_OS(l1, m1, n1, l2-1, m2, n2, l3-1, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
         else
             item4 = 0;
 
