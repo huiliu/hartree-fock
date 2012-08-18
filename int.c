@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     INPUT_INFO *b = parse_input(basis_base);    
     n = b->basisCount;
     //printf("Basis Count: %d\n", n);
+
 /*
     gsl_matrix* overlapMatrix = overlap_matrix(b);
     matrix_output(overlapMatrix, n, "OVERLAP INTEGRALS:");
