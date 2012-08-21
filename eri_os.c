@@ -12,16 +12,94 @@ double K_OS(double a, double b, double AB_2)
     return M_SQRT2 * pow(M_PI, 1.25) / (a + b) * exp(-a*b/(a+b) * AB_2);
 }
 
+double ERI_basis_HRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4, const gsl_vector *AB, const gsl_vector * CD, int debug)
+{
+    int l2, m2, n2, l4, m4, n4;
+    double item;
+
+    l2 = b2->l;
+    m2 = b2->m;
+    n2 = b2->n;
+
+    l4 = b4->l;
+    m4 = b4->m;
+    n4 = b4->n;
+
+    // l2, m2, n2 --> l1, m1, n1
+    if (n2 > 0) {
+        b2->n--;
+        item = AB->data[2] * ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug);
+        b1->n++;
+        return ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug) + item;
+    }
+    if (m2 > 0) {
+        b2->m--;
+        item = AB->data[1] * ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug);
+        b1->m++;
+        return ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug) + item;
+    }
+    if (l2 > 0) {
+        b2->l--;
+        item = AB->data[0] * ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug);
+        b1->l++;
+        return ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug) + item;
+    }
+    // l4, m4, n4 --> l3, m3, n3
+    if (n4 > 0) {
+        b4->n--;
+        item = CD->data[2] * ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug);
+        b3->n++;
+        return ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug) + item;
+    }
+    if (m4 > 0) {
+        b4->m--;
+        item = CD->data[1] * ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug);
+        b3->m++;
+        return ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug) + item;
+    }
+    if (l4 > 0) {
+        b4->l--;
+        item = CD->data[0] * ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug);
+        b3->l++;
+        return ERI_basis_HRR(b1, b2, b3, b4, AB, CD, debug) + item;
+    }
+
+
+    return ERI_basis_OS(b1, b2, b3, b4, debug);
+}
+
+double ERI_basis(const BASIS* b1, const BASIS* b2,
+                 const BASIS* b3, const BASIS* b4, int debug)
+{
+    BASIS A, B, C, D;
+    gsl_vector AB, CD;
+
+    A = *b1;
+    B = *b2;
+    C = *b3;
+    D = *b4;
+
+    AB = *b1->xyz;
+    CD = *b3->xyz;
+
+    gsl_vector_sub(&AB, b2->xyz);
+    gsl_vector_sub(&CD, b4->xyz);
+
+    return ERI_basis_HRR(&A, &B, &C, &D, &AB, &CD, debug);
+}
+
 double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                     const BASIS* b3, const BASIS* b4, int debug)
 { 
     int i, j, k, l, gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
+    int L, f;
     GTO *g1, *g2, *g3, *g4;
     double gamma1, gamma2, ro;
     gsl_vector *PA, *PB, *QC, *QD, *WQ, *WP, *PQ; 
     gsl_vector *A, *B, *C, *D, *AB, *CD;
     double norm_PQ_2, norm_AB_2, norm_CD_2, T;
     double KAB, KCD;
+    double *F;
     double result = 0;
 
     PB = gsl_vector_alloc(3);
@@ -51,6 +129,10 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
     gaussCount_3 = b3->gaussCount;
     gaussCount_4 = b4->gaussCount;
 
+    L = b1->l + b1->m + b1->n + b2->l + b2->m + b2->n + b3->l + b3->m + b3->n + b4->l + b4->m + b4->n + 1;
+
+    F = calloc(sizeof(double), L);
+
     for (i = 0; i < gaussCount_1; i++) {
         for (j = 0; j < gaussCount_2; j++) {
             for (k = 0; k < gaussCount_3; k++) {
@@ -79,6 +161,9 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                     norm_PQ_2 = gsl_pow_2(gsl_blas_dnrm2(PQ));
                     T = ro * norm_PQ_2;
 
+                    for (f = 0; f < L; f++)
+                        F[f] = F_inc_gamma(f, T);
+
                     gsl_vector_sub(PA, A);
                     gsl_vector_sub(PB, B);
                     gsl_vector_sub(QC, C);
@@ -99,13 +184,14 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                                                        gamma1, gamma2, ro,
                                                        /*AB, CD,*/
                                                        PA, PB, QC, QD, WQ, WP,
-                                                       0, T)/sqrt(gamma1 + gamma2);
+                                                       0, F)/sqrt(gamma1 + gamma2);
                     gsl_vector_free(PA);
                     gsl_vector_free(QC);
                 }
             }
         }
     }
+    free(F);
     gsl_vector_free(PB);
     gsl_vector_free(QD);
     gsl_vector_free(PQ);
@@ -118,6 +204,7 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
     return result;
 }
 
+/*
 double ERI_HRR_OS(int l1, int m1, int n1,
                   int l2, int m2, int n2,
                   int l3, int m3, int n3,
@@ -150,6 +237,7 @@ double ERI_HRR_OS(int l1, int m1, int n1,
 
     return ERI_VRR_OS(l1, m1, n1, l2, m2, n2, l3, m3, n3, l4, m4, n4, zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, 0, T);
 }
+*/
 
 double ERI_VRR_OS(int l1, int m1, int n1,
                   int l2, int m2, int n2,
@@ -158,7 +246,7 @@ double ERI_VRR_OS(int l1, int m1, int n1,
                   double zeta, double gamma, double ro,
                   const gsl_vector *PA, const gsl_vector *PB, const gsl_vector *QC,
                   const gsl_vector *QD, const gsl_vector *WQ, const gsl_vector *WP,
-                  int m, double T)
+                  int m, double *T)
 {
     double item1, item2, item3, item4, item5, result;
     // -----------------------------------the fourth GTO-------------------------------
@@ -537,7 +625,7 @@ double ERI_VRR_OS(int l1, int m1, int n1,
 
     if (l1 == 0 && l1 == m1 && m1 == n1 && n1 == l2 && l2 == m2 && m2 == n2 && n2 == l3 && l3 == m3 && m3 == n3 && n3 == l4 && l4 == m4 && m4 == n4){
         //fprintf(stdout, "F%8d%20.8lf%20.8lf\n", m, T, F_inc_gamma(m, T));
-        return F_inc_gamma(m, T);
+        return T[m];
     }
     
     return 0;
