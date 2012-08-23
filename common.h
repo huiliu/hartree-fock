@@ -12,6 +12,8 @@ void vector_output(const gsl_vector *, int , char *);
 double F_inc_gamma(int m ,double w);
 int factorial(int);
 int factorial_2(int);
+// check the symtery of two-electron integral
+int ChkERISym(double ****e, int i, int j, int k, int l, int N, int *is_dup);
 void* Malloc(size_t n);
 void* Calloc(size_t s, size_t n);
 

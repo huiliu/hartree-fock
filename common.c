@@ -65,6 +65,40 @@ int factorial_2(int n)
     return n * factorial_2(n-2);
 }
 
+// check the symtery of two-electron integral
+#define GetIndex(i, j, k, l, N) (N * N * N * i + N * N * j + N * k + l)
+#ifndef MIN
+#define MIN(a, b)   ((a) < (b) ? (a) : (b))
+#endif
+
+int ChkERISym(double ****e, int i, int j, int k, int l, int N, int *is_dup)
+{
+// thanks David pulq for his method
+// https://plus.google.com/106075773891428215861/posts
+// https://gist.github.com/3427265
+    long pos;
+    long min;
+
+    if (e[i][j][k][l] != 0){
+        *is_dup = 1;
+        return 0;
+    }
+
+    pos = min = GetIndex(i, j, k, l, N);
+    
+    min = MIN(min, GetIndex(i, j, l, k, N));
+    min = MIN(min, GetIndex(j, i, l, k, N));
+    min = MIN(min, GetIndex(j, i, k, l, N));
+    min = MIN(min, GetIndex(k, l, i, j, N));
+    min = MIN(min, GetIndex(k, l, j, i, N));
+    min = MIN(min, GetIndex(l, k, i, j, N));
+    min = MIN(min, GetIndex(l, k, j, i, N));
+    
+    *is_dup = pos != min;
+    
+    return 0;
+}
+
 void* Malloc(size_t n)
 {
     void * p;
