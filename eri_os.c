@@ -129,9 +129,9 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
     gaussCount_3 = b3->gaussCount;
     gaussCount_4 = b4->gaussCount;
 
-    L = b1->l + b1->m + b1->n + b2->l + b2->m + b2->n + b3->l + b3->m + b3->n + b4->l + b4->m + b4->n + 1;
+    L = b1->l + b1->m + b1->n + b2->l + b2->m + b2->n + b3->l + b3->m + b3->n + b4->l + b4->m + b4->n;
 
-    F = calloc(sizeof(double), L);
+    F = calloc(sizeof(double), L + 1);
 
     for (i = 0; i < gaussCount_1; i++) {
         for (j = 0; j < gaussCount_2; j++) {
@@ -161,8 +161,14 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                     norm_PQ_2 = gsl_pow_2(gsl_blas_dnrm2(PQ));
                     T = ro * norm_PQ_2;
 
-                    for (f = 0; f < L; f++)
+                    for (f = 0; f <= L; f++)
                         F[f] = F_inc_gamma(f, T);
+
+                    /*
+                    F[L] = F_inc_gamma(L, T);
+                    for (f = L-1; f >= 0; f--)
+                        F[f] = (2 * T * F[f+1] + exp(-T)) / (2*f + 1);
+                    */
 
                     gsl_vector_sub(PA, A);
                     gsl_vector_sub(PB, B);
