@@ -32,5 +32,4 @@ double**** int2e_matrix(INPUT_INFO* b);
 void int2e_output(double**** e, int n, char* msg);
 #endif
 
-int chkSYM(double ****e, int i, int j, int k, int l);
 #endif
