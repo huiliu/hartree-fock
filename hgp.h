@@ -5,6 +5,19 @@
 
 #ifndef INTEGRALS_HGP__ERI
 #define INTEGRALS_HGP__ERI
+
+#define GetShellBasisCount(i, L)   \
+    if (i == 0) L = 1; /* S */\
+    else if (i == 1) L = 3; /* P */\
+    else if (i == 2) L = 6; /* D */\
+    else if (i == 3) L = 10; /* F */\
+    else if (i == 4) L = 15; /* G */\
+    else if (i == 5) L = 21; /* H */\
+    else{ \
+        fprintf(stderr, "This Program cann't deal with the orbital of L >5\n"); \
+        exit(EXIT_FAILURE); \
+    }
+        
 void HGPShell(double ****, const BASIS *, 
                         int *, int *, int *, int *, int, int );
 double HGPBasisHRR(BASIS *, BASIS *, BASIS *b3, BASIS *,

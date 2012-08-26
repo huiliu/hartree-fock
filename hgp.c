@@ -12,18 +12,6 @@
 // according contracted shell number give the number. 2*n + 1
 #define MAXSHELL    11
 
-#define GetShellBasisCount(i, L)   \
-    if (i == 0) L = 1; /* S */\
-    else if (i == 1) L = 3; /* P */\
-    else if (i == 2) L = 6; /* D */\
-    else if (i == 3) L = 10; /* F */\
-    else if (i == 4) L = 15; /* G */\
-    else if (i == 5) L = 21; /* H */\
-    else{ \
-        fprintf(stderr, "This Program cann't deal with the orbital of L >5\n"); \
-        exit(EXIT_FAILURE); \
-    }
-        
 void HGPShell(double ****ERI, const BASIS *b,
                 int *ii, int *jj, int *kk, int *ll, int bc, int debug)
 {
@@ -74,18 +62,6 @@ void HGPShell(double ****ERI, const BASIS *b,
                         b3 = b[*kk + k];
                         b4 = b[*ll + l];
 
-                        if (*ll + l == 5) {
-    fprintf(stdout, "%d %d %d %d\n", *ii, *jj, *kk, *ll);
-        fprintf(stdout, "------------------------------------\n");
-    vector_output(AB, 3, "AB:");
-    vector_output(CD, 3, "CD:");
-        basis_set_output(&b1, 1, "B1:");
-        basis_set_output(&b2, 1, "B2:");
-        basis_set_output(&b3, 1, "B3:");
-        basis_set_output(&b4, 1, "B4:");
-        fprintf(stdout, "------------------------------------\n");
-                        }
-
                         ERI[*ii + i][*jj + j][*kk + k][*ll + l] = \
                            HGPBasisHRR(&b1, &b2, &b3, &b4, AB, CD, XSXS, debug);
                         
@@ -135,7 +111,7 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
     }
     if (b2->n > 0) {
         b2->n--;
-        item = AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
+        item = AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b1->n++;
         return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
     }
@@ -154,7 +130,7 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
     }
     if (b4->n > 0) {
         b4->n--;
-        item = AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
+        item = AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->n++;
         return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
     }
