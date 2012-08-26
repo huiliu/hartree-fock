@@ -6,6 +6,7 @@
 #include "basis.h"
 #include "int2e.h"
 #include "eri_os.h"
+#include "hgp.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_math.h>
 
@@ -193,7 +194,7 @@ double**** int2e_matrix(INPUT_INFO* b)
 #endif
 {
     int debug = 0;
-    register int i, j, k, l;
+    int i, j, k, l;
     int basis_count, atomCount;
     int is_dup = 0;
     BASIS *basisSet;
@@ -245,14 +246,15 @@ double**** int2e_matrix(INPUT_INFO* b)
         for (j = 0; j < basis_count; j++) {
             for (k = 0; k < basis_count; k++) {
                 for (l = 0; l < basis_count; l++) {
-                    //debug = 0;
+                    debug = 0;
                     //if (i == 0 && j == 2 && k == 0 && l == 2)
-                    //if (i == 2 && j == 0 && k == 0 && l == 2)
-                    //    debug = 999;
+                    if (i == 0 && j == 0 && k == 0 && l == 1)
+                        debug = 999;
 
-                    ChkERISym(e2, i, j, k, l, basis_count, &is_dup);
-                    if (is_dup)     continue;
+                    //ChkERISym(e2, i, j, k, l, basis_count, &is_dup);
+                    //if (is_dup)     continue;
 
+                    /*
                     e2[i][j][k][l] = \
                     e2[i][j][l][k] = \
                     e2[j][i][k][l] = \
@@ -264,13 +266,10 @@ double**** int2e_matrix(INPUT_INFO* b)
                                                  &basisSet[j], 
                                                  &basisSet[k], 
                                                  &basisSet[l], debug);
-                    /*
+                    //e2[i][j][k][l] = ERI_basis_OS(&basisSet[i], 
                     //e2[l][k][j][i] = int2e_basis(&basisSet[i], 
-                    e2[i][j][k][l] = ERI_basis_OS(&basisSet[i], 
-                                                  &basisSet[j], 
-                                                  &basisSet[k], 
-                                                  &basisSet[l], debug);
                     */
+                    HGPShell(e2, basisSet, &i, &j, &k, &l, basis_count, debug);
                 }
             }
         }

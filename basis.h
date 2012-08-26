@@ -16,7 +16,7 @@ typedef struct gto {
 typedef struct _b {
 // the parameter of basis function
     int gaussCount;
-    int l, m, n;
+    int l, m, n, L;
     GTO* gaussian;   // 3 表示一个基函数由3个gaussian函数构成
     gsl_vector* xyz;
 }BASIS;

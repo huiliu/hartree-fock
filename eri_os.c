@@ -147,8 +147,10 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                     gamma2 = g3->alpha + g4->alpha;
                     ro = gamma1 * gamma2 / (gamma1 + gamma2);
 
-                    PA = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
-                    QC = gaussian_product_center(g3->alpha, C, g4->alpha, D, debug);
+                    PA = gaussian_product_center(g1->alpha, A, 
+                                                 g2->alpha, B, debug);
+                    QC = gaussian_product_center(g3->alpha, C, 
+                                                 g4->alpha, D, debug);
 
                     gsl_vector_memcpy(PB, PA);
                     gsl_vector_memcpy(QD, QC);

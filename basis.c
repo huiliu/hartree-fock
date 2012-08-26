@@ -475,25 +475,28 @@ BASIS* readbasis(FILE * f, int basisCount)
                     // Px
                     basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+1].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+1].l = 1;
                     basis[basis_i+1].gaussian[i].l = 1;
                     basis[basis_i+1].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i+1].gaussian[i]);
                     // Py
                     basis[basis_i+2].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+2].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+2].m = 1;
                     basis[basis_i+2].gaussian[i].m = 1;
                     basis[basis_i+2].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i+2].gaussian[i]);
                     // Pz
                     basis[basis_i+3].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+3].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+3].n = 1;
                     basis[basis_i+3].gaussian[i].n = 1;
                     basis[basis_i+3].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i+3].gaussian[i]);
                 }
+
+                // set the angular momentum for shell and orbital type
+                basis[basis_i+1].L = basis[basis_i+1].l = 1;
+                basis[basis_i+2].L = basis[basis_i+2].m = 1;
+                basis[basis_i+3].L = basis[basis_i+3].n = 1;
+
                 basis_i += 4;
                 state = 2;  //读完一组基函数信息，状态返回，读取下一组
                 break;
@@ -504,7 +507,6 @@ BASIS* readbasis(FILE * f, int basisCount)
                     // d_{x^{2}}
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i].l = 2;
                     basis[basis_i].gaussian[i].l = 2;
                     basis[basis_i].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i].gaussian[i]);
@@ -512,22 +514,18 @@ BASIS* readbasis(FILE * f, int basisCount)
                     // d_{y^{2}}
                     basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+1].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+1].m = 2;
                     basis[basis_i+1].gaussian[i].m = 2;
                     basis[basis_i+1].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i+1].gaussian[i]);
                     // d_{z^{2}}
                     basis[basis_i+2].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+2].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+2].n = 2;
                     basis[basis_i+2].gaussian[i].n = 2;
                     basis[basis_i+2].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i+2].gaussian[i]);
                     // d_{xy}
                     basis[basis_i+3].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+3].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+3].l = 1;
-                    basis[basis_i+3].m = 1;
                     basis[basis_i+3].gaussian[i].l = 1;
                     basis[basis_i+3].gaussian[i].m = 1;
                     basis[basis_i+3].gaussian[i].norm = 
@@ -535,8 +533,6 @@ BASIS* readbasis(FILE * f, int basisCount)
                     // d_{xz}
                     basis[basis_i+4].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+4].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+4].l = 1;
-                    basis[basis_i+4].n = 1;
                     basis[basis_i+4].gaussian[i].l = 1;
                     basis[basis_i+4].gaussian[i].n = 1;
                     basis[basis_i+4].gaussian[i].norm = 
@@ -544,13 +540,31 @@ BASIS* readbasis(FILE * f, int basisCount)
                     // d_{yz}
                     basis[basis_i+5].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i+5].gaussian[i].coeff = tmp_coeff_2;
-                    basis[basis_i+5].m = 1;
-                    basis[basis_i+5].n = 1;
                     basis[basis_i+5].gaussian[i].m = 1;
                     basis[basis_i+5].gaussian[i].n = 1;
                     basis[basis_i+5].gaussian[i].norm = 
                                 normalize_coeff(&basis[basis_i+5].gaussian[i]);
                 }
+
+                // set the angular momentum for shell type
+                basis[basis_i].L = \
+                basis[basis_i+1].L = \
+                basis[basis_i+2].L = \
+                basis[basis_i+3].L = \
+                basis[basis_i+4].L = \
+                basis[basis_i+5].L = 2;
+
+                // set the angular momentum for orbital type
+                basis[basis_i].l = 2;
+                basis[basis_i+1].m = 2;
+                basis[basis_i+2].n = 2;
+                basis[basis_i+3].l = 1;
+                basis[basis_i+3].m = 1;
+                basis[basis_i+4].l = 1;
+                basis[basis_i+4].n = 1;
+                basis[basis_i+5].m = 1;
+                basis[basis_i+5].n = 1;
+
                 basis_i += 6;
                 state = 2;  //读完一组基函数信息，状态返回，读取下一组
                 break;
