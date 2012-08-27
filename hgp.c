@@ -20,6 +20,7 @@ void HGPShell(double ****ERI, const BASIS *b,
  *
  */
     int i, j, k, l;
+    int r, s, u, v;
     int L1, L2, L3, L4;
     int is_dup = 0;
     gsl_vector *AB, *CD;
@@ -52,17 +53,41 @@ void HGPShell(double ****ERI, const BASIS *b,
             for (j = 0; j < L2; j++) {
                 for (k = 0; k < L3; k++) {
                     for (l = 0; l < L4; l++) {
+                        
+                        r = *ii + i;
+                        s = *jj + j;
+                        u = *kk + k;
+                        v = *ll + l;
 
-                        //ChkERISym(ERI, *ii + i, *jj + j, *kk + k, *ll + l,
-                        //                                        bc, &is_dup);
-                        //if (is_dup)     continue;
+                        ChkERISym(ERI, *ii + i, *jj + j, *kk + k, *ll + l,
+                                                                bc, &is_dup);
+                        if (is_dup)     continue;
 
-                        b1 = b[*ii + i];
-                        b2 = b[*jj + j];
-                        b3 = b[*kk + k];
-                        b4 = b[*ll + l];
+/*
+                        debug = 0;
+                        if (*ii + i == 0 && 
+                            *jj + j == 5 &&
+                            (*kk + k == 0 || *kk + k == 5) && 
+                            (*ll + l == 0 || *ll + l == 5)
+                            ) {
+                            debug = 5;
+                            fprintf(stdout, "-----%d-----%d-----%d-----%d-----\n", *ii+i, *jj+j, *kk+k, *ll+l);
+                        }
+                        */
 
-                        ERI[*ii + i][*jj + j][*kk + k][*ll + l] = \
+                        b1 = b[r];
+                        b2 = b[s];
+                        b3 = b[u];
+                        b4 = b[v];
+
+                        ERI[r][s][u][v] = \
+                        ERI[r][s][v][u] = \
+                        ERI[s][r][u][v] = \
+                        ERI[s][r][v][u] = \
+                        ERI[u][v][r][s] = \
+                        ERI[u][v][s][r] = \
+                        ERI[v][u][r][s] = \
+                        ERI[v][u][s][r] = \
                            HGPBasisHRR(&b1, &b2, &b3, &b4, AB, CD, XSXS, debug);
                         
                     }
@@ -138,6 +163,9 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
 
     // the basis integral has been converted to the form of (e0|f0), 
     // and continue to carry out transpose (e0|f0) to [e0|f0]
+    if (debug == 5)
+        fprintf(stdout, "HGPBasisHRR: %d %d %d %d %d %d\n", b1->l, b1->m, b1->n,
+                                                            b3->l, b3->m, b3->n); 
     return HGPBasis(b1, b2, b3, b4, AB, CD, XSXS, debug);
 }
 
@@ -174,6 +202,15 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
     B = b2->xyz;
     C = b3->xyz;
     D = b4->xyz;
+
+    if (debug == 5) {
+        vector_output(A, 3, "A:");
+        vector_output(B, 3, "B:");
+        vector_output(C, 3, "C:");
+        vector_output(D, 3, "D:");
+        vector_output(AB, 3, "AB:");
+        vector_output(CD, 3, "CD:");
+    }
 
     norm_AB_2 = gsl_pow_2(gsl_blas_dnrm2(AB));
     norm_CD_2 = gsl_pow_2(gsl_blas_dnrm2(CD));
@@ -227,6 +264,15 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
 
                     gsl_vector_scale(WP, -gamma2/(gamma1+gamma2));
                     gsl_vector_scale(WQ, gamma1/(gamma1+gamma2));
+
+    if (debug == 5) {
+        vector_output(PA, 3, "PA:");
+        vector_output(PB, 3, "PB:");
+        vector_output(QC, 3, "QC:");
+        vector_output(QD, 3, "QD:");
+        vector_output(WP, 3, "WP:");
+        vector_output(WQ, 3, "WQ:");
+    }
 
                     KAB = K_OS(g1->alpha, g2->alpha, norm_AB_2);
                     KCD = K_OS(g3->alpha, g4->alpha, norm_CD_2);
