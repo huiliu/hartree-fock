@@ -16,11 +16,13 @@ void HGPShell(double ****ERI, const BASIS *b,
                 int *ii, int *jj, int *kk, int *ll, int bc, int debug)
 {
 /*
+ * select all basis function in common shell. for example px, py, pz;
+ *
  */
     int i, j, k, l;
     int L1, L2, L3, L4;
     int is_dup = 0;
-    gsl_vector *AB, *CD, *B, *D;
+    gsl_vector *AB, *CD;
     BASIS b1, b2, b3, b4;
     int basisCount = bc - 1;
     double *XSXS;
@@ -28,14 +30,11 @@ void HGPShell(double ****ERI, const BASIS *b,
     AB = gsl_vector_alloc(3);
     CD = gsl_vector_alloc(3);
 
-    B = b[*jj].xyz;
-    D = b[*ll].xyz;
-
     gsl_vector_memcpy(AB, b[*ii].xyz);
     gsl_vector_memcpy(CD, b[*kk].xyz);
 
-    gsl_vector_sub(AB, B);
-    gsl_vector_sub(CD, D);
+    gsl_vector_sub(AB, b[*jj].xyz);
+    gsl_vector_sub(CD, b[*ll].xyz);
 
     // get the orbital type by angular momentum number
     GetShellBasisCount(b[*ii].L, L1);
@@ -48,6 +47,7 @@ void HGPShell(double ****ERI, const BASIS *b,
     //  use restricte condition (ab|cd)
     //if (L1 != 0 && L2 != 0 && L3 != 0 && L4 != 0) {
 
+        // (pp|pp) = (ds|ds) + AB(ds|ps) + CD(ps|ds) + (ps|ps)
         for (i = 0; i < L1; i++) {
             for (j = 0; j < L2; j++) {
                 for (k = 0; k < L3; k++) {
@@ -88,15 +88,15 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
                  gsl_vector *AB, gsl_vector *CD, double *XSXS, int debug)
 {
 /* the input basis may be:
- *  (px, py|dx^2, dxy), ......
+ * (px, py|dx^2, dxy), ......
  * transpose it to the form of (e0|f0) by HRR(J. Chem. Phys. 89(9), 5777, 1988)
  * formula (18)
  */
 
-// contract basis to form (e0|f0)
-// (a(b+1)|cd) = ((a+1)b|cd) + AB(ab|cd)
-
     double item;
+// contract basis to form (e0|f0)
+
+// (a(b+1)|cd) = ((a+1)b|cd) + AB(ab|cd)
     if (b2->l > 0) {
         b2->l--;
         item = AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
@@ -116,27 +116,28 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
         return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
     }
 
+// (ab|c(d+1)) = (ab|(c+1)d) + CD(ab|cd)
     if (b4->l > 0) {
         b4->l--;
-        item = AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
+        item = CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->l++;
         return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
     }
     if (b4->m > 0) {
         b4->m--;
-        item = AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
+        item = CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->m++;
         return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
     }
     if (b4->n > 0) {
         b4->n--;
-        item = AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
+        item = CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->n++;
         return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
     }
 
-    // the basis integral convert to the form of (e0|f0), and continue to carry out
-    // transpose from (e0|f0) to [e0|f0]
+    // the basis integral has been converted to the form of (e0|f0), 
+    // and continue to carry out transpose (e0|f0) to [e0|f0]
     return HGPBasis(b1, b2, b3, b4, AB, CD, XSXS, debug);
 }
 
@@ -169,10 +170,10 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
     WP = gsl_vector_alloc(3);
     WQ = gsl_vector_alloc(3);
 
-    A = b1->xyz,
-    B = b2->xyz,
-    C = b3->xyz,
-    D = b4->xyz,
+    A = b1->xyz;
+    B = b2->xyz;
+    C = b3->xyz;
+    D = b4->xyz;
 
     norm_AB_2 = gsl_pow_2(gsl_blas_dnrm2(AB));
     norm_CD_2 = gsl_pow_2(gsl_blas_dnrm2(CD));
@@ -273,7 +274,6 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
     double item1, item2, item3;
     double result;
     if (n3 >= 1) {
-
         item1 = QC->data[2] * HGPHrrVRR(l1, m1, n1, l3, m3, n3-1,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[2] * HGPHrrVRR(l1, m1, n1, l3, m3, n3-1,

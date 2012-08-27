@@ -111,10 +111,10 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
     WP = gsl_vector_alloc(3);
     WQ = gsl_vector_alloc(3);
 
-    A = b1->xyz,
-    B = b2->xyz,
-    C = b3->xyz,
-    D = b4->xyz,
+    A = b1->xyz;
+    B = b2->xyz;
+    C = b3->xyz;
+    D = b4->xyz;
 
     gsl_vector_memcpy(AB, A);
     gsl_vector_sub(AB, B);
