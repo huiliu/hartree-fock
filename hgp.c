@@ -90,6 +90,9 @@ void HGPShell(double ****ERI, const BASIS *b,
                             b4 = b[u];
                         }
 
+    fprintf(stdout, "-----%d %d %d %d %d %d  %d %d %d %d %d %d-----\n", b1.l, b1.m, b1.n, b2.l, b2.m, b2.n,
+                                                b3.l, b3.m, b3.n, b4.l, b4.m, b4.n);
+
                         ERI[r][s][u][v] = \
                         //ERI[r][s][v][u] = \
                         //ERI[s][r][u][v] = \
@@ -98,7 +101,7 @@ void HGPShell(double ****ERI, const BASIS *b,
                         //ERI[u][v][s][r] = \
                         //ERI[v][u][r][s] = \
                         //ERI[v][u][s][r] =
-                           HGPBasisHRR(&b1, &b2, &b3, &b4, AB, CD, XSXS, debug);
+                           HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
                         
                     }
                 }
@@ -119,7 +122,7 @@ void HGPShell(double ****ERI, const BASIS *b,
     free(XSXS);
 }
 
-double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4, 
+double HGPBasisHRR(BASIS b1, BASIS b2, BASIS b3, BASIS b4, 
                  gsl_vector *AB, gsl_vector *CD, double *XSXS, int debug)
 {
 /* the input basis may be:
@@ -129,74 +132,69 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
  */
 
     double item;
-    BASIS tmp;
+    BASIS tmp2l, tmp2m, tmp2n, tmp4l, tmp4m, tmp4n;
+    tmp2l = tmp2m = tmp2n = b2;
+    tmp4l = tmp4m = tmp4n = b4;
 // contract basis to form (e0|f0)
 
 // (a(b+1)|cd) = ((a+1)b|cd) + AB(ab|cd)
-    if (b2->l > 0) {
-        tmp = *b2;
-        tmp.l--;
-
-        b2->l--;
+    if (b2.l > 0) {
+        b2.l--;
         item = AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
 
-        b1->l++;
-        return HGPBasisHRR(b1, &tmp, b3, b4, AB, CD, XSXS, debug) + item;
+        tmp2l.l--;
+        b1.l++;
+        return HGPBasisHRR(b1, tmp2l, b3, b4, AB, CD, XSXS, debug) + item;
     }
-    if (b2->m > 0) {
-        tmp = *b2;
-        tmp.m--;
-
-        b2->m--;
+    if (b2.m > 0) {
+        b2.m--;
         item = AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
-        b1->m++;
-        return HGPBasisHRR(b1, &tmp, b3, b4, AB, CD, XSXS, debug) + item;
-    }
-    if (b2->n > 0) {
-        tmp = *b2;
-        tmp.n--;
 
-        b2->n--;
+        tmp2m.m--;
+        b1.m++;
+        return HGPBasisHRR(b1, tmp2m, b3, b4, AB, CD, XSXS, debug) + item;
+    }
+    if (b2.n > 0) {
+        b2.n--;
         item = AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
-        b1->n++;
-        return HGPBasisHRR(b1, &tmp, b3, b4, AB, CD, XSXS, debug) + item;
+
+        tmp2n.n--;
+        b1.n++;
+        return HGPBasisHRR(b1, tmp2n, b3, b4, AB, CD, XSXS, debug) + item;
     }
 
 // (ab|c(d+1)) = (ab|(c+1)d) + CD(ab|cd)
-    if (b4->l > 0) {
-        tmp = *b4;
-        tmp.l--;
-
-        b4->l--;
+    if (b4.l > 0) {
+        b4.l--;
         item = CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
-        b3->l++;
-        return HGPBasisHRR(b1, b2, b3, &tmp, AB, CD, XSXS, debug) + item;
-    }
-    if (b4->m > 0) {
-        tmp = *b4;
-        tmp.m--;
 
-        b4->m--;
+        tmp4l.l--;
+        b3.l++;
+        return HGPBasisHRR(b1, b2, b3, tmp4l, AB, CD, XSXS, debug) + item;
+    }
+    if (b4.m > 0) {
+        b4.m--;
         item = CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
-        b3->m++;
-        return HGPBasisHRR(b1, b2, b3, &tmp, AB, CD, XSXS, debug) + item;
-    }
-    if (b4->n > 0) {
-        tmp = *b4;
-        tmp.n--;
 
-        b4->n--;
+        tmp4m.m--;
+        b3.m++;
+        return HGPBasisHRR(b1, b2, b3, tmp4m, AB, CD, XSXS, debug) + item;
+    }
+    if (b4.n > 0) {
+        b4.n--;
         item = CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
-        b3->n++;
-        return HGPBasisHRR(b1, b2, b3, &tmp, AB, CD, XSXS, debug) + item;
+
+        tmp4n.n--;
+        b3.n++;
+        return HGPBasisHRR(b1, b2, b3, tmp4n, AB, CD, XSXS, debug) + item;
     }
 
     // the basis integral has been converted to the form of (e0|f0), 
     // and continue to carry out transpose (e0|f0) to [e0|f0]
     if (debug == 5)
-        fprintf(stdout, "HGPBasisHRR: %d %d %d %d %d %d\n", b1->l, b1->m, b1->n,
-                                                            b3->l, b3->m, b3->n); 
-    return HGPBasis(b1, b2, b3, b4, AB, CD, XSXS, debug);
+        fprintf(stdout, "HGPBasisHRR: %d %d %d %d %d %d\n", b1.l, b1.m, b1.n,
+                                                            b3.l, b3.m, b3.n); 
+    return HGPBasis(&b1, &b2, &b3, &b4, AB, CD, XSXS, debug);
 }
 
 void HGPBra(BASIS *b1, BASIS *b2, BASIS *bra)
@@ -225,6 +223,9 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
 
     l1 = b1->l; m1 = b1->m; n1 = b1->n;
     l3 = b3->l; m3 = b3->m; n3 = b3->n;
+
+    fprintf(stdout, "     %d %d %d %d %d %d, %d %d %d %d %d %d\n", l1, m1, n1, b2->l, b2->m, b2->n,
+                                                l3, m3, n3, b4->l, b4->m, b4->n);
 
     PB = gsl_vector_alloc(3);
     QD = gsl_vector_alloc(3);
