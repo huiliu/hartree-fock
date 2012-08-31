@@ -59,11 +59,11 @@ void HGPShell(double ****ERI, const BASIS *b,
                         u = *kk + k;
                         v = *ll + l;
 
+/*
                         ChkERISym(ERI, *ii + i, *jj + j, *kk + k, *ll + l,
                                                                 bc, &is_dup);
                         if (is_dup)     continue;
 
-/*
                         debug = 0;
                         if (*ii + i == 0 && 
                             *jj + j == 5 &&
@@ -75,19 +75,29 @@ void HGPShell(double ****ERI, const BASIS *b,
                         }
                         */
 
-                        b1 = b[r];
-                        b2 = b[s];
-                        b3 = b[u];
-                        b4 = b[v];
+                        if (r > s) {
+                            b1 = b[r];
+                            b2 = b[s];
+                        }else{
+                            b1 = b[s];
+                            b2 = b[r];
+                        }
+                        if (u > v) {
+                            b3 = b[u];
+                            b4 = b[v];
+                        }else{
+                            b3 = b[v];
+                            b4 = b[u];
+                        }
 
                         ERI[r][s][u][v] = \
-                        ERI[r][s][v][u] = \
-                        ERI[s][r][u][v] = \
-                        ERI[s][r][v][u] = \
-                        ERI[u][v][r][s] = \
-                        ERI[u][v][s][r] = \
-                        ERI[v][u][r][s] = \
-                        ERI[v][u][s][r] = \
+                        //ERI[r][s][v][u] = \
+                        //ERI[s][r][u][v] = \
+                        //ERI[s][r][v][u] = \
+                        //ERI[u][v][r][s] = \
+                        //ERI[u][v][s][r] = \
+                        //ERI[v][u][r][s] = \
+                        //ERI[v][u][s][r] =
                            HGPBasisHRR(&b1, &b2, &b3, &b4, AB, CD, XSXS, debug);
                         
                     }
@@ -119,46 +129,66 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
  */
 
     double item;
+    BASIS tmp;
 // contract basis to form (e0|f0)
 
 // (a(b+1)|cd) = ((a+1)b|cd) + AB(ab|cd)
     if (b2->l > 0) {
+        tmp = *b2;
+        tmp.l--;
+
         b2->l--;
         item = AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
+
         b1->l++;
-        return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
+        return HGPBasisHRR(b1, &tmp, b3, b4, AB, CD, XSXS, debug) + item;
     }
     if (b2->m > 0) {
+        tmp = *b2;
+        tmp.m--;
+
         b2->m--;
         item = AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b1->m++;
-        return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
+        return HGPBasisHRR(b1, &tmp, b3, b4, AB, CD, XSXS, debug) + item;
     }
     if (b2->n > 0) {
+        tmp = *b2;
+        tmp.n--;
+
         b2->n--;
         item = AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b1->n++;
-        return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
+        return HGPBasisHRR(b1, &tmp, b3, b4, AB, CD, XSXS, debug) + item;
     }
 
 // (ab|c(d+1)) = (ab|(c+1)d) + CD(ab|cd)
     if (b4->l > 0) {
+        tmp = *b4;
+        tmp.l--;
+
         b4->l--;
         item = CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->l++;
-        return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
+        return HGPBasisHRR(b1, b2, b3, &tmp, AB, CD, XSXS, debug) + item;
     }
     if (b4->m > 0) {
+        tmp = *b4;
+        tmp.m--;
+
         b4->m--;
         item = CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->m++;
-        return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
+        return HGPBasisHRR(b1, b2, b3, &tmp, AB, CD, XSXS, debug) + item;
     }
     if (b4->n > 0) {
+        tmp = *b4;
+        tmp.n--;
+
         b4->n--;
         item = CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug);
         b3->n++;
-        return HGPBasisHRR(b1, b2, b3, b4, AB, CD, XSXS, debug) + item;
+        return HGPBasisHRR(b1, b2, b3, &tmp, AB, CD, XSXS, debug) + item;
     }
 
     // the basis integral has been converted to the form of (e0|f0), 
@@ -167,6 +197,11 @@ double HGPBasisHRR(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4,
         fprintf(stdout, "HGPBasisHRR: %d %d %d %d %d %d\n", b1->l, b1->m, b1->n,
                                                             b3->l, b3->m, b3->n); 
     return HGPBasis(b1, b2, b3, b4, AB, CD, XSXS, debug);
+}
+
+void HGPBra(BASIS *b1, BASIS *b2, BASIS *bra)
+{
+    ;
 }
 
 double HGPBasis(const BASIS* b1, const BASIS* b2,
