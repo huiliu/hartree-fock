@@ -20,10 +20,15 @@
         
 void HGPShell(double ****, const BASIS *, 
                         int *, int *, int *, int *, int, int );
-double HGPBasisHRR(BASIS *, BASIS *, BASIS *b3, BASIS *,
-                 gsl_vector *, gsl_vector *, double *, int );
+double HGPBasisHRR(BASIS b1, BASIS b2, BASIS b3, BASIS b4, 
+                    int l1, int m1, int n1,
+                    int l2, int m2, int n2,
+                    int l3, int m3, int n3,
+                    int l4, int m4, int n4,
+                 gsl_vector *AB, gsl_vector *CD, double *XSXS, int debug);
 double HGPBasis(const BASIS* b1, const BASIS* b2,
                 const BASIS* b3, const BASIS* b4,
+                int l1, int m1, int n1, int l3, int m3, int n3,
                 const gsl_vector *AB, const gsl_vector *CD,
                 double *XSXS, int debug);
 double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
