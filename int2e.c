@@ -10,6 +10,38 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_math.h>
 
+int Selector(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4, int i, int j, int k, int l)
+{
+/* 
+    This procedure use to select algorithm for computing ERI.
+
+    First, Check the type of basis are the same by angular momenta,
+    and check the index of basis.
+
+    Because the HGP algorithm just use for the same type (having identical
+    angular momenta, degrees of contraction, and numbers of common centers)
+    shell quartets
+
+    OUTPUT:
+        1   USE HGP algorithm.
+       -1   USE others algorithm.
+ */
+    int n = 0;
+    if (b1->L == b2->L && b2->L == b3->L && b3->L == b4->L) {
+
+        if (b1->L == 1)  n = 3;
+        if (b1->L == 2)  n = 6;
+        if (b1->L == 3)  n = 10;
+        if (b1->L == 4)  n = 15;
+
+        if (abs(i - j) < n && abs(i - k) < n && abs(i - l) < n)
+            return 1;
+        else
+            return -1;
+    }
+    return -1;
+}
+
 double theta(int l, int l1, int l2, double PA, double PB, int r, double gamma)
 {
 // David B. Cook; Handbook of Computational Quantum Chemistry. P249
@@ -240,6 +272,7 @@ double**** int2e_matrix(INPUT_INFO* b)
         }
     }
 
+    // Traverse the basis set for computing the ERI
     //omp_set_num_threads(2);
     //#pragma omp parallel for private(j, k, l)
     for (i = 0; i < basis_count; i++) {
@@ -263,13 +296,24 @@ double**** int2e_matrix(INPUT_INFO* b)
                     e2[k][l][j][i] = \
                     e2[l][k][i][j] = \
                     e2[l][k][j][i] = ERI_basis_OS(&basisSet[i], 
+                    e2[l][k][j][i] = HGPShell(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
                                                  &basisSet[l], debug);
+                    */
                     //e2[i][j][k][l] = ERI_basis_OS(&basisSet[i], 
                     //e2[l][k][j][i] = int2e_basis(&basisSet[i], 
-                    */
-                    HGPShell(e2, basisSet, &i, &j, &k, &l, basis_count, debug);
+
+                    if (Selector(&basisSet[i], &basisSet[j], &basisSet[k], 
+                                 &basisSet[l], i, j, k, l) == 1)
+                        e2[i][j][k][l] = \
+                        HGPShell(basisSet, i, j, k, l, debug);
+                    else
+                        e2[i][j][k][l] = ERI_basis_OS(&basisSet[i], 
+                                                      &basisSet[j], 
+                                                      &basisSet[k], 
+                                                      &basisSet[l], debug);
+    
                 }
             }
         }

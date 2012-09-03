@@ -12,119 +12,58 @@
 // according contracted shell number give the number. 2*n + 1
 #define MAXSHELL    11
 
-void HGPShell(double ****ERI, const BASIS *b,
-                int *ii, int *jj, int *kk, int *ll, int bc, int debug)
+double HGPShell(const BASIS *b,
+                int ii, int jj, int kk, int ll, int debug)
 {
 /*
  * select all basis function in common shell. for example px, py, pz;
  *
  */
+    gsl_vector *AB, *CD;
+    int L1, L2, L3, L4;
     int i, j, k, l;
     int r, s, u, v;
-    int L1, L2, L3, L4;
-    int is_dup = 0;
-    gsl_vector *AB, *CD;
     BASIS b1, b2, b3, b4;
-    int basisCount = bc - 1;
-    double *XSXS;
+    double *XSXS = NULL;
+    double result;
 
     AB = gsl_vector_alloc(3);
     CD = gsl_vector_alloc(3);
 
-    gsl_vector_memcpy(AB, b[*ii].xyz);
-    gsl_vector_memcpy(CD, b[*kk].xyz);
+    i = j = k = l = 0;
+    r = ii + i;
+    s = jj + j;
+    u = kk + k;
+    v = ll + l;
 
-    gsl_vector_sub(AB, b[*jj].xyz);
-    gsl_vector_sub(CD, b[*ll].xyz);
+    b1 = b[r];
+    b2 = b[s];
+    b3 = b[u];
+    b4 = b[v];
 
-    // get the orbital type by angular momentum number
-    GetShellBasisCount(b[*ii].L, L1);
-    GetShellBasisCount(b[*jj].L, L2);
-    GetShellBasisCount(b[*kk].L, L3);
-    GetShellBasisCount(b[*ll].L, L4);
+    L1 = b1.L;
+    L2 = b2.L;
+    L3 = b3.L;
+    L4 = b4.L;
 
-    MALLOC(XSXS, sizeof(double)*gsl_pow_6(MAXSHELL));
+    gsl_vector_memcpy(AB, b1.xyz);
+    gsl_vector_memcpy(CD, b3.xyz);
 
-    //  use restricte condition (ab|cd)
-    //if (L1 != 0 && L2 != 0 && L3 != 0 && L4 != 0) {
+    gsl_vector_sub(AB, b2.xyz);
+    gsl_vector_sub(CD, b4.xyz);
 
-        // (pp|pp) = (ds|ds) + AB(ds|ps) + CD(ps|ds) + (ps|ps)
-        for (i = 0; i < L1; i++) {
-            for (j = 0; j < L2; j++) {
-                for (k = 0; k < L3; k++) {
-                    for (l = 0; l < L4; l++) {
+    result = HGPBasisHRR(b1, b2, b3, b4,
+                             b1.l, b1.m, b1.n,
+                             b2.l, b2.m, b2.n,
+                             b3.l, b3.m, b3.n,
+                             b4.l, b4.m, b4.n,
+                             AB, CD, XSXS, debug);
                         
-                        r = *ii + i;
-                        s = *jj + j;
-                        u = *kk + k;
-                        v = *ll + l;
-
-/*
-                        ChkERISym(ERI, *ii + i, *jj + j, *kk + k, *ll + l,
-                                                                bc, &is_dup);
-                        if (is_dup)     continue;
-
-                        debug = 0;
-                        if (*ii + i == 0 && 
-                            *jj + j == 5 &&
-                            (*kk + k == 0 || *kk + k == 5) && 
-                            (*ll + l == 0 || *ll + l == 5)
-                            ) {
-                            debug = 5;
-                            fprintf(stdout, "-----%d-----%d-----%d-----%d-----\n", *ii+i, *jj+j, *kk+k, *ll+l);
-                        }
-                        */
-
-                        if (r > s) {
-                            b1 = b[r];
-                            b2 = b[s];
-                        }else{
-                            b1 = b[s];
-                            b2 = b[r];
-                        }
-                        if (u > v) {
-                            b3 = b[u];
-                            b4 = b[v];
-                        }else{
-                            b3 = b[v];
-                            b4 = b[u];
-                        }
-
-    fprintf(stdout, "-----%d %d %d %d %d %d  %d %d %d %d %d %d-----\n", b1.l, b1.m, b1.n, b2.l, b2.m, b2.n,
-                                                b3.l, b3.m, b3.n, b4.l, b4.m, b4.n);
-
-                        ERI[r][s][u][v] = \
-                        //ERI[r][s][v][u] = \
-                        //ERI[s][r][u][v] = \
-                        //ERI[s][r][v][u] = \
-                        //ERI[u][v][r][s] = \
-                        //ERI[u][v][s][r] = \
-                        //ERI[v][u][r][s] = \
-                        //ERI[v][u][s][r] =
-                           HGPBasisHRR(b1, b2, b3, b4,
-                                        b1.l, b1.m, b1.n,
-                                        b2.l, b2.m, b2.n,
-                                        b3.l, b3.m, b3.n,
-                                        b4.l, b4.m, b4.n,
-                                        AB, CD, XSXS, debug);
-                        
-                    }
-                }
-            }
-        }
-    //}
-    *ll = *ll + L4 - 1;
-
-    if (*ll == basisCount)
-        *kk = *kk + L3 - 1;
-    if (*kk == basisCount)
-        *jj = *jj + L2 - 1;
-    if (*jj == basisCount)
-        *ii = *ii + L1 - 1;
-
     gsl_vector_free(AB);
     gsl_vector_free(CD);
-    free(XSXS);
+
+    return result;
+    //free(XSXS);
 }
 
 double HGPBasisHRR(BASIS b1, BASIS b2, BASIS b3, BASIS b4, 
@@ -140,45 +79,39 @@ double HGPBasisHRR(BASIS b1, BASIS b2, BASIS b3, BASIS b4,
  * formula (18)
  */
 
-    double item;
-    BASIS tmp2l, tmp2m, tmp2n, tmp4l, tmp4m, tmp4n;
-    tmp2l = tmp2m = tmp2n = b2;
-    tmp4l = tmp4m = tmp4n = b4;
 // contract basis to form (e0|f0)
 
 // (a(b+1)|cd) = ((a+1)b|cd) + AB(ab|cd)
     if (l2 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1+1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug)
-        + AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1+1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        //+ AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
     }
     if (m2 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1+1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug)
-        + AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1+1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        //+ AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
     }
     if (n2 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1+1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug)
-        + AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1+1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        //+ AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
     }
 
 // (ab|c(d+1)) = (ab|(c+1)d) + CD(ab|cd)
     if (l4 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3+1,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug)
-        + CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3+1,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug);
+        //+ CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug);
     }
     if (m4 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3+1,n3,l4,m4-1,n4,AB, CD, XSXS, debug)
-        + CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4-1,n4,AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3+1,n3,l4,m4-1,n4,AB, CD, XSXS, debug);
+        //+ CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4-1,n4,AB, CD, XSXS, debug);
     }
     if (n4 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3+1,l4,m4,n4-1,AB, CD, XSXS, debug)
-        + CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4,n4-1,AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3+1,l4,m4,n4-1,AB, CD, XSXS, debug);
+        //+ CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4,n4-1,AB, CD, XSXS, debug);
     }
 
     // the basis integral has been converted to the form of (e0|f0), 
     // and continue to carry out transpose (e0|f0) to [e0|f0]
-    if (debug == 5)
-        fprintf(stdout, "HGPBasisHRR: %d %d %d %d %d %d\n", b1.l, b1.m, b1.n,
-                                                            b3.l, b3.m, b3.n); 
+    // FORM (e0|f0) FROM ∑∑∑∑[e0|f0]
     return HGPBasis(&b1, &b2, &b3, &b4, l1, m1, n1, l3, m3, n3, AB, CD, XSXS, debug);
 }
 
@@ -193,7 +126,7 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
                 const gsl_vector *AB, const gsl_vector *CD,
                 double *XSXS, int debug)
 {
-// FORM (e0|f0) FROM ∑∑∑∑[e0|f0]
+    // [e0|f0] ---> (e0|f0)
     int i, j, k, l;
     //int l1, m1, n1, l3, m3, n3;
     int gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
@@ -210,8 +143,6 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
     //l1 = b1->l; m1 = b1->m; n1 = b1->n;
     //l3 = b3->l; m3 = b3->m; n3 = b3->n;
 
-    fprintf(stdout, "     %d %d %d %d %d %d, %d %d %d %d %d %d\n", l1, m1, n1, b2->l, b2->m, b2->n,
-                                                l3, m3, n3, b4->l, b4->m, b4->n);
 
     PB = gsl_vector_alloc(3);
     QD = gsl_vector_alloc(3);
@@ -287,14 +218,12 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
                     gsl_vector_scale(WP, -gamma2/(gamma1+gamma2));
                     gsl_vector_scale(WQ, gamma1/(gamma1+gamma2));
 
-    if (debug == 5) {
         vector_output(PA, 3, "PA:");
         vector_output(PB, 3, "PB:");
         vector_output(QC, 3, "QC:");
         vector_output(QD, 3, "QD:");
         vector_output(WP, 3, "WP:");
         vector_output(WQ, 3, "WQ:");
-    }
 
                     KAB = K_OS(g1->alpha, g2->alpha, norm_AB_2);
                     KCD = K_OS(g3->alpha, g4->alpha, norm_CD_2);
@@ -314,8 +243,7 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
             }
         }
     }
-    int index = HGPIndex(l1, m1, n1, l3, m3, n3);
-    XSXS[index] = result;
+    //int index = HGPIndex(l1, m1, n1, l3, m3, n3);
     free(F);
     gsl_vector_free(PB);
     gsl_vector_free(QD);
@@ -338,14 +266,17 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
             const gsl_vector *QD, const gsl_vector *WP, const gsl_vector *WQ,
             int m, double *T)
 {
+// VRR
 // compute the primitive integrals [e0|f0]
-    double item1, item2, item3;
+    double item1 = 0, item2, item3;
     double result;
     if (n3 >= 1) {
+        /*
         item1 = QC->data[2] * HGPHrrVRR(l1, m1, n1, l3, m3, n3-1,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[2] * HGPHrrVRR(l1, m1, n1, l3, m3, n3-1,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        */
 
         if (n3 >= 2) {
             item2 = (n3-1)/(2*gamma) * (HGPHrrVRR(l1, m1, n1, l3, m3, n3-2,
@@ -365,12 +296,12 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (m3 >= 1) {
-
+        /*
         item1 = QC->data[1] * HGPHrrVRR(l1, m1, n1, l3, m3-1, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[1] * HGPHrrVRR(l1, m1, n1, l3, m3-1, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-
+        */
         if (m3 >= 2) {
             item2 = (m3-1)/(2*gamma) * (HGPHrrVRR(l1, m1, n1, l3, m3-2, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)
@@ -389,11 +320,12 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (l3 >= 1) {
-
+        /*
         item1 = QC->data[0] * HGPHrrVRR(l1, m1, n1, l3-1, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[0] * HGPHrrVRR(l1, m1, n1, l3-1, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
+        */
 
         if (l3 >= 2) {
             item2 = (l3-1) / (2*gamma) * (HGPHrrVRR(l1, m1, n1, l3-2, m3, n3,
@@ -414,12 +346,12 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
     }
 
     if (n1 >= 1) {
-
+        /*
         item1 = PA->data[2] * HGPHrrVRR(l1, m1, n1-1, l3, m3, n3,
                                 zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WP->data[2] * HGPHrrVRR(l1, m1, n1-1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-
+        */
         if (n1 >= 2) {
             item2 = (n1-1) / (2*zeta) * (HGPHrrVRR(l1, m1, n1-2, l3, m3, n3,
                                 zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
@@ -438,12 +370,13 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (m1 >= 1) {
-
+        /*
         item1 = PA->data[1] * HGPHrrVRR(l1, m1-1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WP->data[1] * HGPHrrVRR(l1, m1-1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
 
+        */
         if (m1 >= 2) {
             item2 = (m1-1) / (2*zeta) * (HGPHrrVRR(l1, m1-2, n1, l3, m3, n3,
                                 zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
@@ -462,12 +395,12 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (l1 >= 1) {
-
+        /*
         item1 = PA->data[0] * HGPHrrVRR(l1-1, m1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WP->data[0] * HGPHrrVRR(l1-1, m1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-
+        */
         if (l1 >= 2) {
             item2 = (l1-1) / (2*zeta) * (HGPHrrVRR(l1-2, m1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)

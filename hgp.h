@@ -18,8 +18,9 @@
         exit(EXIT_FAILURE); \
     }
         
-void HGPShell(double ****, const BASIS *, 
-                        int *, int *, int *, int *, int, int );
+double HGPShell(const BASIS *b,
+                int ii, int jj, int kk, int ll, int debug);
+
 double HGPBasisHRR(BASIS b1, BASIS b2, BASIS b3, BASIS b4, 
                     int l1, int m1, int n1,
                     int l2, int m2, int n2,

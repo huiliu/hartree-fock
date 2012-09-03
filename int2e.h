@@ -8,6 +8,7 @@
 #ifndef __INTEGRAL__INT2E__
 #define __INTEGRAL__INT2E__
 
+int Selector(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4, int i, int j, int k, int l);
 double theta(int l, int l1, int l2, double PA, double PB, int r, double gamma);
 double B(int l, int l1, int l2, double PA, double PB, int r, double gamma1,
          int ll,int l3, int l4, double QC, double QD, int rr,double gamma2,
