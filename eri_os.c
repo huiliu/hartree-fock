@@ -2,7 +2,6 @@
 #include <math.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_blas.h>
-#include "overlap.h"
 #include "common.h"
 #include "basis.h"
 #include "eri_os.h"
@@ -17,7 +16,7 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
     gsl_vector *PA, *PB, *QC, *QD, *WQ, *WP, *PQ; 
     gsl_vector *A, *B, *C, *D, *AB, *CD;
     double norm_PQ_2, norm_AB_2, norm_CD_2, T;
-    double KAB, KCD;
+    double KAB, KCD, pre;
     double *F;
     double result = 0;
 
@@ -100,7 +99,7 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                     KAB = K_OS(g1->alpha, g2->alpha, norm_AB_2);
                     KCD = K_OS(g3->alpha, g4->alpha, norm_CD_2);
 
-                    double pre = g1->norm * g1->coeff * g2->norm * g2->coeff * g3->norm * g3->coeff * g4->norm * g4->coeff;
+                    pre = g1->coeff * g2->coeff * g3->coeff * g4->coeff;
 
                     result += pre * KAB * KCD * ERI_VRR_OS(g1->l, g1->m ,g1->n,
                                                        g2->l, g2->m ,g2->n,

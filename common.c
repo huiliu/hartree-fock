@@ -4,30 +4,9 @@
 /*
  *  放置一些常用函数
  */
-void matrix_output(const gsl_matrix *m, int n, char *msg)
-{
-    int i, j;
-
-    printf("%s\n",msg);
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++)
-            printf("%15.6lE", gsl_matrix_get(m, i, j));
-        printf("\n");
-    }
-}
-
-void vector_output(const gsl_vector *v, int n, char *msg)
-{
-    int i;
-
-    printf("%s\n",msg);
-    for (i = 0; i < n; i++)
-        printf("%15.06lE", gsl_vector_get(v, i));
-    printf("\n");
-}
-
-#define F_INC_GAMMA_CYCLE    100
-#define F_INC_GAMMA_delta  1.0E-10
+#define M_SQRT_PI_2             1.253314137315500121
+#define F_INC_GAMMA_CYCLE       100
+#define F_INC_GAMMA_delta       1.0E-10
 double F_inc_gamma(int m ,double w)
 {
     double result = 0;
@@ -44,25 +23,25 @@ double F_inc_gamma(int m ,double w)
         }
         return result * factorial_2(2 * m -1) * exp(-w);;
     }else
-        result = factorial_2(2*m -1) / pow(2*w, m + 0.5) * sqrt(M_PI_2);
+        result = factorial_2(2*m -1) / pow(2*w, m + 0.5) * M_SQRT_PI_2;
     return result;
 }
 
-int factorial(int n)
+inline int factorial(int n)
 {
+    int i, result = 1;
     if (n <= 1) return 1;
-
-    return n*factorial(n-1);
+    for (i = 2; i <= n; i++)
+        result *= i;
+    return result;
 }
 
-int factorial_2(int n)
+double fact2[] = {1, 1, 2, 3, 8, 15, 48, 105, 384, 945, 3840, 10395, 46080, 135135, 645120, 2027025, 10321920, 34459425, 185794560, 654729075, 3715891200, 13749310575, 81749606400, 316234143225, 1961990553600};
+
+inline int factorial_2(int n)
 {
-    if (n % 2 == 0) {
-        if (n <= 2) return 2;
-    }else{
-        if (n <= 1) return 1;
-    }
-    return n * factorial_2(n-2);
+    if (n <= 0) return 1;
+    return fact2[n];
 }
 
 // check the symtery of two-electron integral
@@ -71,9 +50,9 @@ int factorial_2(int n)
 #define MIN(a, b)   ((a) < (b) ? (a) : (b))
 #endif
 
-int ChkERISym(double ****e, int i, int j, int k, int l, int N, int *is_dup)
+inline int ChkERISym(double ****e, int i, int j, int k, int l, int N, int *is_dup)
 {
-// thanks David pulq for his method
+// thanks David pulq for his idea.
 // https://plus.google.com/106075773891428215861/posts
 // https://gist.github.com/3427265
     long pos;
@@ -117,4 +96,18 @@ void* Calloc(size_t s, size_t n)
         exit(EXIT_FAILURE);
     }else
         return p;
+}
+
+inline gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, 
+                            const double b, const gsl_vector *B, int flags)
+{
+// Gaussian函数乘积定理计算双中心
+    int i;
+    double gamma = a + b;
+    gsl_vector *center = gsl_vector_alloc(3);
+    
+    for (i = 0; i < 3; i++)
+        center->data[i] = (a * A->data[i] + b * B->data[i]) / gamma;
+
+    return center;
 }

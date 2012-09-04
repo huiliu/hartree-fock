@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "print.h"
 #include "common.h"
-#include "hamiltonian.h"
-#include "overlap.h"
-#include "int2e.h"
+#include "eri_drive.h"
 
 int main(int argc, char** argv)
 {
@@ -38,7 +37,7 @@ int main(int argc, char** argv)
 #else
     double ****int2e;
 #endif
-    int2e = int2e_matrix(b);
+    int2e = ERI_Matrix(b);
     int2e_output(int2e, n, "TWO ELECTRON INTEGRAL:");
 
     return 0;
