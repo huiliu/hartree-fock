@@ -12,8 +12,7 @@
 // according contracted shell number give the number. 2*n + 1
 #define MAXSHELL    11
 
-double HGPShell(const BASIS *b,
-                int ii, int jj, int kk, int ll, int debug)
+double HGPShell(const BASIS *b, int ii, int jj, int kk, int ll, int debug)
 {
 /*
  * select all basis function in common shell. for example px, py, pz;

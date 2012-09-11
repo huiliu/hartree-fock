@@ -1,9 +1,9 @@
 # target: [pre]
 # [TAB]  command
-CC = gcc
-#OPT = -O3 -lm -lgsl -fopenmp
+CC = icc
+OPT = -O3 -lm -lgsl -fopenmp
 #OPT = -O3 -lm -lgsl -fopenmp -pg
-OPT = -Wall -g -lm -lgsl -fopenmp -pg
+#OPT = -Wall -g -lm -lgsl -fopenmp -pg
 
 all: basis.o overlap.o common.o hamiltonian.o int2e.o int scf eri_os.o hgp.o
 

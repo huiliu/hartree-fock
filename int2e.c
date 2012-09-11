@@ -284,8 +284,8 @@ double**** int2e_matrix(INPUT_INFO* b)
                     if (i == 0 && j == 0 && k == 0 && l == 1)
                         debug = 999;
 
-                    //ChkERISym(e2, i, j, k, l, basis_count, &is_dup);
-                    //if (is_dup)     continue;
+                    ChkERISym(e2, i, j, k, l, basis_count, &is_dup);
+                    if (is_dup)     continue;
 
                     /*
                     e2[i][j][k][l] = \
@@ -305,10 +305,24 @@ double**** int2e_matrix(INPUT_INFO* b)
                     //e2[l][k][j][i] = int2e_basis(&basisSet[i], 
 
                     if (Selector(&basisSet[i], &basisSet[j], &basisSet[k], 
-                                 &basisSet[l], i, j, k, l) == 1)
+                                                 &basisSet[l], i, j, k, l) == 1)
+                        e2[i][j][l][k] = \
+                        e2[j][i][k][l] = \
+                        e2[j][i][l][k] = \
+                        e2[k][l][i][j] = \
+                        e2[k][l][j][i] = \
+                        e2[l][k][i][j] = \
+                        e2[l][k][j][i] = \
                         e2[i][j][k][l] = \
-                        HGPShell(basisSet, i, j, k, l, debug);
+                                        HGPShell(basisSet, i, j, k, l, debug);
                     else
+                        e2[i][j][l][k] = \
+                        e2[j][i][k][l] = \
+                        e2[j][i][l][k] = \
+                        e2[k][l][i][j] = \
+                        e2[k][l][j][i] = \
+                        e2[l][k][i][j] = \
+                        e2[l][k][j][i] = \
                         e2[i][j][k][l] = ERI_basis_OS(&basisSet[i], 
                                                       &basisSet[j], 
                                                       &basisSet[k], 
