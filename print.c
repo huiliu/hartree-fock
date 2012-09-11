@@ -1,4 +1,5 @@
 #include "print.h"
+#include <math.h>
 
 void matrix_output(const gsl_matrix *m, int n, char *msg)
 {
@@ -22,16 +23,9 @@ void vector_output(const gsl_vector *v, int n, char *msg)
     printf("\n");
 }
 
-#ifdef __INTEGRAL__INT2E__ONE__
-void int2e_output(double* e, int n, char* msg)
-#else
 void int2e_output(double**** e, int n, char* msg)
-#endif
 {
     int i, j, k, l;
-#ifdef __INTEGRAL__INT2E__ONE__
-    int I;
-#endif
 
     printf("%s\n", msg);
 
@@ -39,14 +33,8 @@ void int2e_output(double**** e, int n, char* msg)
         for (j = 0; j < n; j++) {
             for (k = 0; k < n; k++) {
                 for (l = 0; l < n; l++) {
-#ifdef __INTEGRAL__INT2E__ONE__
-                    I = i * gsl_pow_3(n) + j * gsl_pow_2(n) + \
-                                                            k * n + l;
-                    printf("%15.9lf", e[I]);
-#else
                     if (fabs(e[i][j][k][l]) > 1.0E-8)
                         printf("%3d%3d%3d%3d%15.9lf\n", i, j, k, l, e[i][j][k][l]);
-#endif
                 }
             }
         }
@@ -67,7 +55,7 @@ void basis_set_output(const BASIS* b, int count, char* msg)
 void gto_output(const GTO* g, int count, char* msg)
 {
     int i;
-    double alpha, coeff, norm;
+    double alpha, coeff;
     int l, m, n;
 
     printf("%s\n", msg);
@@ -78,9 +66,8 @@ void gto_output(const GTO* g, int count, char* msg)
         n = (g+i)->n;
         alpha = (g+i)->alpha;
         coeff = (g+i)->coeff;
-        norm = (g+i)->norm;
-        printf("%d %d %d %12.8lf %12.8lf %12.8lf\n",
-                l, m, n, alpha, coeff, norm);
+        printf("%d %d %d %15.9E %16.9E\n",
+                l, m, n, alpha, coeff);
     }
 }
 
@@ -93,7 +80,5 @@ void atom_output(const ATOM_INFO** atom, int n)
         printf("%s %d %d%12.7lf%12.7lf%12.7lf\n", a->symbol, a->n, 
                     a->basisCount, a->coordination->data[0], 
                     a->coordination->data[1], a->coordination->data[2]); 
-        // for (j = 0; j < a->basisCount; j++)
-        //     basis_set_output(a->basis + j, 3, "Basis Function:");
     }
 }

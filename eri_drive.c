@@ -49,6 +49,7 @@ double**** ERI_Matrix(INPUT_INFO* b)
                     ChkERISym(e2, i, j, k, l, basis_count, &is_dup);
                     if (is_dup)     continue;
 
+//            fprintf(stdout, "---%d---%d---%d---%d---\n", i, j, k, l);
                     e2[i][j][k][l] = \
                     e2[i][j][l][k] = \
                     e2[j][i][k][l] = \
@@ -59,31 +60,11 @@ double**** ERI_Matrix(INPUT_INFO* b)
                     e2[l][k][j][i] = ERI_basis_OS(&basisSet[i], 
                                                  &basisSet[j], 
                                                  &basisSet[k], 
-                                                 &basisSet[l], debug);
+                                                 &basisSet[l], 
+                                                 NULL, debug);
                 }
             }
         }
     }
     return e2;
 }
-
-/*
-void int2e_output(double**** e, int n, char* msg)
-{
-    int i, j, k, l;
-
-    printf("%s\n", msg);
-
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
-            for (k = 0; k < n; k++) {
-                for (l = 0; l < n; l++) {
-                    if (fabs(e[i][j][k][l]) > 1.0E-8)
-                        printf("%3d%3d%3d%3d%15.9lf\n", 
-                                                    i, j, k, l, e[i][j][k][l]);
-                }
-            }
-        }
-    }
-}
-*/

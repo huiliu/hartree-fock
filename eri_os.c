@@ -5,21 +5,24 @@
 #include "common.h"
 #include "basis.h"
 #include "eri_os.h"
+#include "print.h"
 
 double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
-                    const BASIS* b3, const BASIS* b4, int debug)
+                    const BASIS* b3, const BASIS* b4, COORD **PP, int debug)
 { 
     int i, j, k, l, gaussCount_1, gaussCount_2, gaussCount_3, gaussCount_4;
     int L, f;
     GTO *g1, *g2, *g3, *g4;
     double gamma1, gamma2, ro;
-    gsl_vector *PA, *PB, *QC, *QD, *WQ, *WP, *PQ; 
+    gsl_vector *P, *Q, *PA, *PB, *QC, *QD, *WQ, *WP, *PQ; 
     gsl_vector *A, *B, *C, *D, *AB, *CD;
     double norm_PQ_2, norm_AB_2, norm_CD_2, T;
     double KAB, KCD, pre;
     double *F;
     double result = 0;
 
+    P = gsl_vector_alloc(3);
+    Q = gsl_vector_alloc(3);
     PB = gsl_vector_alloc(3);
     QD = gsl_vector_alloc(3);
     PQ = gsl_vector_alloc(3);
@@ -33,6 +36,13 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
     B = b2->xyz,
     C = b3->xyz,
     D = b4->xyz,
+
+/*
+    basis_set_output(b1, 1, "A:");
+    basis_set_output(b2, 1, "B:");
+    basis_set_output(b3, 1, "C:");
+    basis_set_output(b4, 1, "D:");
+*/
 
     gsl_vector_memcpy(AB, A);
     gsl_vector_sub(AB, B);
@@ -68,6 +78,9 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
                     PA = gaussian_product_center(g1->alpha, A, g2->alpha, B, debug);
                     QC = gaussian_product_center(g3->alpha, C, g4->alpha, D, debug);
 
+                    gsl_vector_memcpy(P, PA);
+                    gsl_vector_memcpy(Q, QC);
+                    
                     gsl_vector_memcpy(PB, PA);
                     gsl_vector_memcpy(QD, QC);
                     gsl_vector_memcpy(PQ, PA);
@@ -81,6 +94,8 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
 
                     for (f = 0; f <= L; f++)
                         F[f] = F_inc_gamma(f, T);
+
+                    //fprintf(stdout, "%16.9E%16.9E%16.9E%16.9E%16.9E\n", ro, PQ->data[0], PQ->data[1], PQ->data[2], T);
 
                     /*
                     F[L] = F_inc_gamma(L, T);
@@ -101,6 +116,46 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
 
                     pre = g1->coeff * g2->coeff * g3->coeff * g4->coeff;
 
+/*
+                    fprintf(stdout, "----- ----- ----- -----\n \
+                                     %d %d %d\n \
+                                     %d %d %d\n \
+                                     %d %d %d\n \
+                                     %d %d %d\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E %15.9E %15.9E\n \
+                                     %15.9E\n", 
+                                    g1->l, g1->m ,g1->n,
+                                    g2->l, g2->m ,g2->n,
+                                    g3->l, g3->m ,g3->n,
+                                    g4->l, g4->m ,g4->n,
+                                    gamma1, gamma2, ro,
+                                    pre, KAB, KCD,
+                                    P->data[0], P->data[1], P->data[2],
+                                    Q->data[0], Q->data[1], Q->data[2],
+                                    PA->data[0], PA->data[1], PA->data[2],
+                                    PB->data[0], PB->data[1], PB->data[2],
+                                    QC->data[0], QC->data[1], QC->data[2],
+                                    QD->data[0], QD->data[1], QD->data[2],
+                                    WQ->data[0], WQ->data[1], WQ->data[2],
+                                    WP->data[0], WP->data[1], WP->data[2],
+                                    T);
+*/                                    
+/*
+fprintf(stdout, "===== ===== =====\n%15.9E %15.9E %15.9E %15.9E\n",
+                                    g1->alpha, g2->alpha, g3->alpha, g4->alpha);
+fprintf(stdout, "----- ----- -----\n%15.9E %15.9E\n", gamma1, gamma2);
+*/
+
+
                     result += pre * KAB * KCD * ERI_VRR_OS(g1->l, g1->m ,g1->n,
                                                        g2->l, g2->m ,g2->n,
                                                        g3->l, g3->m ,g3->n,
@@ -116,6 +171,8 @@ double ERI_basis_OS(const BASIS* b1, const BASIS* b2,
         }
     }
     free(F);
+    gsl_vector_free(P);
+    gsl_vector_free(Q);
     gsl_vector_free(PB);
     gsl_vector_free(QD);
     gsl_vector_free(PQ);

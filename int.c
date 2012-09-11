@@ -17,6 +17,8 @@ int main(int argc, char** argv)
 
     INPUT_INFO *b = parse_input(basis_base);    
     n = b->basisCount;
+    //basis_set_output(b->basisSet, n, "Basis Set");
+    //atom_output(b->atomList, b->atomCount);
     //printf("Basis Count: %d\n", n);
 
 /*

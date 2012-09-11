@@ -111,3 +111,15 @@ inline gsl_vector* gaussian_product_center(const double a, const gsl_vector *A,
 
     return center;
 }
+
+inline void Gaussian_product_center(const double a, const gsl_vector *A, 
+                            const double b, const gsl_vector *B, COORD *p)
+{
+// Gaussian函数乘积定理计算双中心
+    int i;
+    double gamma = a + b;
+    
+    p->x = (a * A->data[0] + b * B->data[0]) / gamma;
+    p->y = (a * A->data[1] + b * B->data[1]) / gamma;
+    p->z = (a * A->data[2] + b * B->data[2]) / gamma;
+}

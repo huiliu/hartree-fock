@@ -178,6 +178,9 @@ INPUT_INFO* parse_input(const char* file_name)
                 input_information->atomCount = Atom_index;
                 bridge(input_information->basisSet, input_information->atomList,
                                                         Atom_index);
+                input_information->P = PList(input_information->basisSet, 
+                                             input_information->basisCount,
+                                             input_information->gtoCount);
                 return input_information;
                 break;
             case 3: // block end
@@ -213,6 +216,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
     char symbol[5];
     int gauss_num; //gauss_num    每一块gauss函数的个数
     int basis_i = 0, state = 0, i;
+    unsigned short int gtoID = 0;
     //用以临时存储从文件中读取的基函数参数信息
     double param, tmp_alpha, tmp_coeff_1, tmp_coeff_2;
 
@@ -283,6 +287,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                 for (i = 0; i < gauss_num; i++) {
                     fscanf(f, "%lf%lf", &tmp_alpha, &tmp_coeff_1);
 
+                    basis[basis_i].gaussian[i].gtoID = gtoID++;
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_1 *
                                 normalize_coeff(&basis[basis_i].gaussian[i]);
@@ -295,6 +300,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                     fscanf(f, "%lf%lf%lf", &tmp_alpha, &tmp_coeff_1, &tmp_coeff_2);
 
                     // 2S
+                    basis[basis_i].gaussian[i].gtoID = gtoID++;
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
                     basis[basis_i].gaussian[i].coeff = tmp_coeff_1 *
                                    normalize_coeff(&basis[basis_i].gaussian[i]);
@@ -303,6 +309,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                     = basis[basis_i+3].gaussCount = basis[basis_i].gaussCount;
                     // 2P
                     // Px
+                    basis[basis_i+1].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+1].l = 1;
                     basis[basis_i+1].gaussian[i].l = 1;
                     basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
@@ -310,6 +317,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i+1].gaussian[i]);
 
                     // Py
+                    basis[basis_i+2].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+2].m = 1;
                     basis[basis_i+2].gaussian[i].m = 1;
                     basis[basis_i+2].gaussian[i].alpha = tmp_alpha;
@@ -317,6 +325,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i+2].gaussian[i]);
 
                     // Pz
+                    basis[basis_i+3].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+3].n = 1;
                     basis[basis_i+3].gaussian[i].n = 1;
                     basis[basis_i+3].gaussian[i].alpha = tmp_alpha;
@@ -332,6 +341,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
 
                 for (i = 0; i < gauss_num; i++) {
                     // d_{x^{2}}
+                    basis[basis_i].gaussian[i].gtoID = gtoID++;
                     basis[basis_i].l = 2;
                     basis[basis_i].gaussian[i].l = 2;
                     basis[basis_i].gaussian[i].alpha = tmp_alpha;
@@ -339,6 +349,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i].gaussian[i]);
 
                     // d_{y^{2}}
+                    basis[basis_i+1].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+1].m = 2;
                     basis[basis_i+1].gaussian[i].m = 2;
                     basis[basis_i+1].gaussian[i].alpha = tmp_alpha;
@@ -346,6 +357,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i+1].gaussian[i]);
 
                     // d_{z^{2}}
+                    basis[basis_i+2].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+2].n = 2;
                     basis[basis_i+2].gaussian[i].n = 2;
                     basis[basis_i+2].gaussian[i].alpha = tmp_alpha;
@@ -353,6 +365,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i+2].gaussian[i]);
 
                     // d_{xy}
+                    basis[basis_i+3].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+3].l = 1;
                     basis[basis_i+3].m = 1;
                     basis[basis_i+3].gaussian[i].l = 1;
@@ -362,6 +375,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i+3].gaussian[i]);
 
                     // d_{xz}
+                    basis[basis_i+4].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+4].l = 1;
                     basis[basis_i+4].n = 1;
                     basis[basis_i+4].gaussian[i].l = 1;
@@ -371,6 +385,7 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
                                 normalize_coeff(&basis[basis_i+4].gaussian[i]);
 
                     // d_{yz}
+                    basis[basis_i+5].gaussian[i].gtoID = gtoID++;
                     basis[basis_i+5].m = 1;
                     basis[basis_i+5].n = 1;
                     basis[basis_i+5].gaussian[i].m = 1;
@@ -388,9 +403,49 @@ BASIS* readbasis(FILE * f, int basisCount, unsigned short *gtoCount)
     return basis;
 }
 
-double **KabList()
+/*
+ *  Routine:        PList
+ *  Description:    tranverse all the GTO for computing the gaussian product center
+ *  
+ *  Parameter:      
+ *                  BASIS *b                all basis function which consist of GTO
+ *                  int n                   the count of basis function
+ *                  gsl_vector **vp         OUT.    store the P
+ *                  int gtoCount            the total count of GTO
+ */
+COORD **PList(const BASIS *b, int n, int gtoCount)
 {
+    int i, j;
+    int r, s;
+    int l=0, m=0;
+    int k = 0;
+    int ContractDegree_1, ContractDegree_2;
+    double alpha1;
+    COORD **tmp;
 
+    tmp = (COORD **)malloc(sizeof(COORD *)*gtoCount);
+    for (i = 0; i < gtoCount; i++)
+        tmp[i] = malloc(sizeof(COORD)*gtoCount);
+
+    for (i = 0; i < n; i++) {
+        ContractDegree_1 = b[i].gaussCount;
+        for (r = 0; r < ContractDegree_1; r++) {
+            alpha1 = b[i].gaussian[r].alpha; 
+
+            for (j = 0; j < n; j++) {
+                ContractDegree_2 = b[j].gaussCount;
+                for (s = 0; s < ContractDegree_2; s++) {
+                    Gaussian_product_center(alpha1, b[i].xyz,
+                                b[j].gaussian[s].alpha, b[j].xyz, &tmp[l][m]);
+                    //tmp[m][l] = tmp[l][m];
+                    m++;
+                }
+            }
+            l++;
+            m=0;
+        }
+    }
+    return tmp;
 }
 
 double normalize_coeff(const GTO *g)

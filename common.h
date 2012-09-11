@@ -13,7 +13,8 @@ inline int ChkERISym(double ****e, int i, int j, int k, int l, int N, int *is_du
 void* Malloc(size_t n);
 void* Calloc(size_t s, size_t n);
 inline gsl_vector* gaussian_product_center(const double a, const gsl_vector *A, const double b, const gsl_vector *B, int);
-
+inline void Gaussian_product_center(const double a, const gsl_vector *A, 
+                            const double b, const gsl_vector *B, COORD *p);
 #define MALLOC(p,n) \
     if (!(p = malloc(n))) { \
         printf("内存分配错误！\n");\

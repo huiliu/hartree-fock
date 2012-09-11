@@ -1,8 +1,8 @@
 # target: [pre]
 # [TAB]  command
 CC = icc
-OPT = -O3 -lm -lgsl -fopenmp
-#OPT = -O3 -lm -lgsl -fopenmp -pg
+#OPT = -O3 -lm -lgsl -fopenmp
+OPT = -O3 -lm -lgsl -fopenmp -pg
 #OPT = -Wall -g -lm -lgsl -fopenmp -pg
 
 all: print.o basis.o common.o int eri_os.o eri_drive.o
