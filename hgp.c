@@ -9,6 +9,8 @@
 #include "hgp.h"
 #include "eri_os.h"
 
+#define DEBUG_PQW       0
+
 // according contracted shell number give the number. 2*n + 1
 #define MAXSHELL    11
 
@@ -216,14 +218,14 @@ double HGPBasis(const BASIS* b1, const BASIS* b2,
 
                     gsl_vector_scale(WP, -gamma2/(gamma1+gamma2));
                     gsl_vector_scale(WQ, gamma1/(gamma1+gamma2));
-
+#if DEBUG_PQW
         vector_output(PA, 3, "PA:");
         vector_output(PB, 3, "PB:");
         vector_output(QC, 3, "QC:");
         vector_output(QD, 3, "QD:");
         vector_output(WP, 3, "WP:");
         vector_output(WQ, 3, "WQ:");
-
+#endif
                     KAB = K_OS(g1->alpha, g2->alpha, norm_AB_2);
                     KCD = K_OS(g3->alpha, g4->alpha, norm_CD_2);
 
