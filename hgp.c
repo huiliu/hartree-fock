@@ -80,34 +80,35 @@ double HGPBasisHRR(BASIS b1, BASIS b2, BASIS b3, BASIS b4,
  * formula (18)
  */
 
+    double result = 0;
 // contract basis to form (e0|f0)
 
 // (a(b+1)|cd) = ((a+1)b|cd) + AB(ab|cd)
     if (l2 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1+1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
-        //+ AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1+1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug)
+        + AB->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2-1,m2,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
     }
     if (m2 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1+1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
-        //+ AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1+1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug)
+        + AB->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2-1,n2,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
     }
     if (n2 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1+1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
-        //+ AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1+1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug)
+        + AB->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2-1,l3,m3,n3,l4,m4,n4, AB, CD, XSXS, debug);
     }
 
 // (ab|c(d+1)) = (ab|(c+1)d) + CD(ab|cd)
     if (l4 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3+1,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug);
-        //+ CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3+1,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug)
+        + CD->data[0] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4-1,m4,n4,AB, CD, XSXS, debug);
     }
     if (m4 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3+1,n3,l4,m4-1,n4,AB, CD, XSXS, debug);
-        //+ CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4-1,n4,AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3+1,n3,l4,m4-1,n4,AB, CD, XSXS, debug)
+        + CD->data[1] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4-1,n4,AB, CD, XSXS, debug);
     }
     if (n4 > 0) {
-        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3+1,l4,m4,n4-1,AB, CD, XSXS, debug);
-        //+ CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4,n4-1,AB, CD, XSXS, debug);
+        return          HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3+1,l4,m4,n4-1,AB, CD, XSXS, debug)
+        + CD->data[2] * HGPBasisHRR(b1, b2, b3, b4, l1,m1,n1,l2,m2,n2,l3,m3,n3,l4,m4,n4-1,AB, CD, XSXS, debug);
     }
 
     // the basis integral has been converted to the form of (e0|f0), 
@@ -272,12 +273,10 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
     double item1 = 0, item2, item3;
     double result;
     if (n3 >= 1) {
-        /*
         item1 = QC->data[2] * HGPHrrVRR(l1, m1, n1, l3, m3, n3-1,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[2] * HGPHrrVRR(l1, m1, n1, l3, m3, n3-1,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-        */
 
         if (n3 >= 2) {
             item2 = (n3-1)/(2*gamma) * (HGPHrrVRR(l1, m1, n1, l3, m3, n3-2,
@@ -297,12 +296,10 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (m3 >= 1) {
-        /*
         item1 = QC->data[1] * HGPHrrVRR(l1, m1, n1, l3, m3-1, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[1] * HGPHrrVRR(l1, m1, n1, l3, m3-1, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-        */
         if (m3 >= 2) {
             item2 = (m3-1)/(2*gamma) * (HGPHrrVRR(l1, m1, n1, l3, m3-2, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)
@@ -321,13 +318,10 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (l3 >= 1) {
-        /*
         item1 = QC->data[0] * HGPHrrVRR(l1, m1, n1, l3-1, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WQ->data[0] * HGPHrrVRR(l1, m1, n1, l3-1, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-        */
-
         if (l3 >= 2) {
             item2 = (l3-1) / (2*gamma) * (HGPHrrVRR(l1, m1, n1, l3-2, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
@@ -347,12 +341,10 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
     }
 
     if (n1 >= 1) {
-        /*
         item1 = PA->data[2] * HGPHrrVRR(l1, m1, n1-1, l3, m3, n3,
                                 zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WP->data[2] * HGPHrrVRR(l1, m1, n1-1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-        */
         if (n1 >= 2) {
             item2 = (n1-1) / (2*zeta) * (HGPHrrVRR(l1, m1, n1-2, l3, m3, n3,
                                 zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
@@ -371,13 +363,10 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (m1 >= 1) {
-        /*
         item1 = PA->data[1] * HGPHrrVRR(l1, m1-1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WP->data[1] * HGPHrrVRR(l1, m1-1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-
-        */
         if (m1 >= 2) {
             item2 = (m1-1) / (2*zeta) * (HGPHrrVRR(l1, m1-2, n1, l3, m3, n3,
                                 zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
@@ -396,12 +385,10 @@ double HGPHrrVRR(int l1, int m1, int n1, int l3, int m3, int n3,
         return result;
     }
     if (l1 >= 1) {
-        /*
         item1 = PA->data[0] * HGPHrrVRR(l1-1, m1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T) \
               + WP->data[0] * HGPHrrVRR(l1-1, m1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m+1, T);
-        */
         if (l1 >= 2) {
             item2 = (l1-1) / (2*zeta) * (HGPHrrVRR(l1-2, m1, n1, l3, m3, n3,
                             zeta, gamma, ro, PA, PB, QC, QD, WQ, WP, m, T)

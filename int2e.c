@@ -27,8 +27,23 @@ int Selector(BASIS *b1, BASIS *b2, BASIS *b3, BASIS *b4, int i, int j, int k, in
        -1   USE others algorithm.
  */
     int n = 0;
-    if (b1->L == b2->L && b2->L == b3->L && b3->L == b4->L) {
+    /*
+    if (b1->gaussian[0].l == b2->gaussian[0].l &&
+        b1->gaussian[0].m == b2->gaussian[0].m &&
+        b1->gaussian[0].n == b2->gaussian[0].n &&
+        b3->gaussian[0].l == b4->gaussian[0].l &&
+        b3->gaussian[0].m == b4->gaussian[0].m &&
+        b3->gaussian[0].n == b4->gaussian[0].n)
+        return 1;
+    else
+        return -1;
+    */
+    if (b1->L == b2->L && b2->L == b3->L && b3->L == b4->L &&
+        b1->gaussCount == b2->gaussCount &&
+        b2->gaussCount == b3->gaussCount &&
+        b3->gaussCount == b4->gaussCount) {
 
+            return 1;
         if (b1->L == 1)  n = 3;
         if (b1->L == 2)  n = 6;
         if (b1->L == 3)  n = 10;
